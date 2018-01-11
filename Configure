@@ -332,6 +332,14 @@ if [ -z "${osdefault}" ]; then
 		osdefault="next"
 	fi
 fi
+# Mac OS X
+if [ -z "${osdefault}" ]; then
+	echo "Checking for Mac OS X."
+	if [ -x /Applications ]; then
+		echo "macOS"
+		osdefault="macosx"
+	fi
+fi
 # Default
 if [ -z "${osdefault}" ]; then
   echo "Establishing default as BSD"
@@ -385,6 +393,7 @@ do
 	"freebsd") valid=1;;
 	"bsdi") valid=1;;
 	"linux") valid=1;;
+	"macosx") valid=1;;
 	"domainosbsd") valid=1;;
 	"?"|*)
 		if [ "${os}" != "?" ]; then
@@ -405,6 +414,7 @@ do
 		echo "  solaris - suns under Solaris 2.0 or greater";
 		echo " 	encore - Encore MultiMax";
 		echo " 	next - NeXT/MACH";
+		echo "	macosx - Mac OS X";
 		echo " 	dynix - Sequent Balance"
 		echo " 	irix - Silicon Graphics IRIS/IRIX"
 		echo "  newsos - Sony NEWS"
@@ -497,6 +507,10 @@ case ${os} in
 		uarsupport=1
 		kernelsupport=1
 		;;
+	"macosx")
+		uarsupport=1
+		ethersupport=1
+		;;
 	"next")
 		uarsupport=1
 		ethersupport=1
@@ -577,7 +591,7 @@ if [ ${uabsupport} -eq 1 ]; then
 	  "hpux")
       		  echo "OK, setting things up for UAB."
     		  uabpobjs="define([uabpobjs],[sllap.o])";;
-	  "386bsd"|"netbsd"|"freebsd"|"bsdi"|"next")
+	  "386bsd"|"netbsd"|"freebsd"|"bsdi"|"next"|"macosx")
       		  echo "OK, setting things up for UAB."
     		  uabpobjs="define([uabpobjs],[bpfiltp.o])";;
           "solaris")
@@ -707,7 +721,7 @@ if [ $result -eq 0 ]; then
 	  "386bsd")
       		  echo "OK, setting things up for Native EtherTalk."
     		  etherpobjs="define([etherpobjs],[bpfiltp.o])";;
-	  "netbsd"|"freebsd"|"bsdi"|"next")
+	  "netbsd"|"freebsd"|"bsdi"|"next"|"macosx")
 		  ${PROMPT} "Do you want Phase 2 compatibility (yes) ? "
 		  read ans
 		  if [ -z "${ans}" ]; then
@@ -1439,6 +1453,7 @@ changequote([,])
 #   "solaris" - Solaris 2.N (SunOS 5.0 and greater)
 #   "encore" - Encore MultiMax
 #   "next" - NeXT/MACH
+#   "macosx" - Mac OS X
 #   "dynix" - Sequent Balance
 #   "irix" - Silicon Graphics IRIS-4D/IRIX
 #   "newsos" - Sony NEWS
@@ -1757,6 +1772,7 @@ ifelse(os,[bsd],[define([osname],[Standard BSD])])
 ifelse(os,[pyr],[define([osname],[Pyramid in BSD universe])])
 ifelse(os,[xenix5],[define([osname],[SCO Xenix System V])])
 ifelse(os,[aix],[define([osname],[IBM AIX System V])])
+ifelse(os,[macosx],[define([osname],[Mac OS X])])
 ifelse(os,[next],[define([osname],[NeXT/MACH])])
 ifelse(os,[dynix],[define([osname],[Sequent Balance])])
 ifelse(os,[irix],[define([osname],[Silicon Graphics IRIS/IRIX])])
@@ -1780,6 +1796,8 @@ ifelse(os,[pyr],[
     define([cflags],concat(cflags,[ -q]))])
 ifelse(os,[next],[
     define([cflags],concat(cflags,[ -DNeXT -DADDRINPACK]))])
+ifelse(os,[macosx],[
+    define([cflags],concat(cflags,[ -DNeXT -DADDRINPACK -DUSEDIRENT]))])
 ifelse(os,[xenix5],[
     define([cflags],concat(cflags,[ -Dxenix5 -I$I -DLAI_TCP -Di386]))])
 ifelse(os,[aix],[
