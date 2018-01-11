@@ -21,17 +21,23 @@
  *
  */
 
+#include <stdbool.h>
+
 typedef struct qelem {
   struct qelem *q_forw;
   struct qelem *q_back;
 } QElem, *QElemPtr, **QHead;
 
-#define NILQ (QElemPtr) 0
-#define NILQHEAD (QHead) 0
+#define NILQ ((QElemPtr) 0)
+#define NILQHEAD ((QHead) 0)
 
-void q_head();
-void q_tail();
-QElemPtr dq_head(),dq_tail();
-QElemPtr q_next(),q_prev();
+void q_head(QElemPtr *head,QElemPtr nhead);
+void q_tail(QElemPtr *head,QElemPtr ntail);
+QElemPtr dq_head(QHead head);
+QElemPtr dq_tail(QElemPtr *head);
+QElemPtr q_next();
+QElemPtr q_prev();
+QElemPtr q_mapf(QElemPtr head,bool (*filter)(QElemPtr step, void *arg),void *arg);
+void dq_elem(QHead head,QElemPtr item);
 
 #endif

@@ -33,7 +33,10 @@
 #include <sys/time.h>
 #include <netinet/in.h>
 #include <netat/appletalk.h>
+#include <stdbool.h>
+#include <stdlib.h>
 #include "abatp.h"
+#include "abddp.h"
 
 
 /*
@@ -52,26 +55,27 @@
  *
 */
 
-OSErr ATPSndRequest();
-OSErr cbATPSndRequest();
-OSErr ATPOpenSocket();
-OSErr ATPCloseSocket();
-OSErr ATPGetRequest();
-OSErr cbATPGetRequest();
-OSErr ATPRspCancel();
-OSErr ATPSndRsp();
-OSErr cbATPSndRsp();
-void ATPSetResponseTimeout();
+OSErr ATPSndRequest(ABusRecord *abr, bool async);
+OSErr cbATPSndRequest(ABusRecord *abr, int (*callback)(), caddr_t cbarg);
+OSErr ATPOpenSocket(AddrBlock *addr,int *skt);
+OSErr ATPCloseSocket(int skt);
+OSErr ATPGetRequest(ABusRecord *abr, boolean async);
+OSErr cbATPGetRequest(ABusRecord *abr, int (*callback)(ABusRecord *abr, caddr_t cbarg), caddr_t cbarg);
+OSErr ATPRspCancel(ABusRecord *abr, boolean async);
+OSErr ATPSndRsp(ABusRecord *abr, boolean async);
+OSErr cbATPSndRsp(ABusRecord *abr, int (*callback)(ABusRecord *abr, caddr_t cbarg), caddr_t cbarg);
+void ATPSetResponseTimeout(dword value);
 /* OSErr ATPAddRsp(); */
-private void atp_listener();
-private void tcb_timeout();
-private void rsptimeout();
-private boolean handle_request();
-private boolean handle_release();
-private boolean handle_response();
-private OSErr atpreqsend();
-private OSErr atprelsend();
-private OSErr atpxmitres();
+private void atp_listener(u_char skt,u_char type,struct iovec *iov,int iovlen,int packet_length,AddrBlock *addr);
+private void tcb_timeout(TCB *tcb);
+private void rsptimeout(RspCB *rspcb);
+private boolean handle_request(int skt, ATP *atp, char *databuf, int dblen, AddrBlock *addr);
+private boolean handle_release(int skt, int tid, AddrBlock *addr);
+private boolean handle_response(int skt, ATP *atp, char *databuf, int dblen, AddrBlock *addr);
+private OSErr atpreqsend(TCB *tcb);
+private OSErr atprelsend(TCB *tcb);
+private OSErr atpxmitres(ABusRecord *abr, BitMapType bitmap);
+static OSErr killrspcb(RspCB *rspcb);
 
 private int atpreqskt = -1;
 private int atpreqsktpid = 1;	/* pid 1 is init - hope it never runs this */
@@ -87,8 +91,8 @@ private struct iovec ratpiov[ATPIOVLEN] = {
   {(caddr_t)&atph, atpSize},	/* atp */
   {(caddr_t)atpdata, atpMaxData} /* atp user data */
 };
-private int delete_tcb_skt();
-private int ATPWrite();
+private void delete_tcb_skt(int skt);
+private int ATPWrite(atpProto *ap,ATP *atp,char *dp,int dl);
 
 /*
  * ATPSndRequest
@@ -100,9 +104,7 @@ private int ATPWrite();
 */
 
 OSErr
-ATPSndRequest(abr, async)
-ABusRecord *abr;
-int async;				/* boolean - true means runs async */
+ATPSndRequest(ABusRecord *abr, bool async)
 {
   int to;
 
@@ -120,10 +122,7 @@ int async;				/* boolean - true means runs async */
 }
 
 OSErr
-cbATPSndRequest(abr, callback, cbarg)
-ABusRecord *abr;
-int (*callback)();
-caddr_t cbarg;
+cbATPSndRequest(ABusRecord *abr, int (*callback)(), caddr_t cbarg)
 {
   atpProto *atpproto;
   TCB *tcb;
@@ -173,9 +172,7 @@ caddr_t cbarg;
  */
 
 OSErr
-ATPKillGetReq(abr, async)
-ABusRecord *abr;
-boolean async;
+ATPKillGetReq(ABusRecord *abr, boolean async)
 {
   RqCB *rqcb;
 
@@ -195,9 +192,7 @@ boolean async;
  */
 
 OSErr
-ATPReqCancel(abr, async)
-ABusRecord *abr;
-boolean async;
+ATPReqCancel(ABusRecord *abr, boolean async)
 {
   TCB *tcb;
 
@@ -233,13 +228,11 @@ boolean async;
 */
 
 OSErr
-ATPOpenSocket(addr,skt)
-AddrBlock *addr;
-int *skt;
+ATPOpenSocket(AddrBlock *addr,int *skt)
 {
   if (DDPOpenSocketIOV(skt,atp_listener,ratpiov, ATPIOVLEN) != noErr)
     return(tooManySkts);
-  if (create_atpskt(*skt, addr, NULL) == NULL)
+  if (create_atpskt(*skt, addr) == NULL)
     return(noDataArea);
   return(noErr);
 }
@@ -255,8 +248,7 @@ int *skt;
  * 
 */
 OSErr
-ATPCloseSocket(skt)
-int skt;
+ATPCloseSocket(int skt)
 {
   int v;
   RspCB *rspcb;
@@ -332,9 +324,7 @@ caddr_t arg;
  * this socket must have been opened by calling ATPOpenSocket.
 */
 OSErr
-ATPGetRequest(abr,async)
-ABusRecord *abr;
-int async;			/* boolean - true means runs async */
+ATPGetRequest(ABusRecord *abr, boolean async)
 {
   int to;
 
@@ -348,10 +338,7 @@ int async;			/* boolean - true means runs async */
 }
 
 OSErr
-cbATPGetRequest(abr, callback, cbarg)
-ABusRecord *abr;
-int (*callback)();
-caddr_t cbarg;
+cbATPGetRequest(ABusRecord *abr, int (*callback)(ABusRecord *abr, caddr_t cbarg), caddr_t cbarg)
 {
   /* 
    * Only one listen request per socket is allowed - more than one
@@ -386,9 +373,7 @@ caddr_t cbarg;
  *
 */
 OSErr
-ATPRspCancel(abr, async)
-ABusRecord *abr;
-int async;
+ATPRspCancel(ABusRecord *abr, boolean async)
 {
   RspCB *rspcb;
 
@@ -403,8 +388,7 @@ int async;
  * kill off a RSPCB transation
  *
 */
-killrspcb(rspcb)
-RspCB *rspcb;
+OSErr killrspcb(RspCB *rspcb)
 {
   remTimeout(rsptimeout, rspcb);    
   delete_rspcb(rspcb);		/* remove it from the list */
@@ -417,9 +401,7 @@ RspCB *rspcb;
  *
 */
 OSErr
-ATPSndRsp(abr, async)
-ABusRecord *abr;
-int async;			/* boolean - true means runs async */
+ATPSndRsp(ABusRecord *abr, boolean async)
 {
   int to ;
   if ((to = cbATPSndRsp(abr, NULL, 0L)) < 0)
@@ -433,10 +415,7 @@ int async;			/* boolean - true means runs async */
 }
 
 OSErr
-cbATPSndRsp(abr, callback, cbarg)
-ABusRecord *abr;
-int (*callback)();
-caddr_t cbarg;
+cbATPSndRsp(ABusRecord *abr, int (*callback)(ABusRecord *abr, caddr_t cbarg), caddr_t cbarg)
 {
   atpProto *atpproto;
   RspCB *rspcb;
@@ -481,8 +460,7 @@ caddr_t cbarg;
  *
 */
 void
-ATPSetResponseTimeout(value)
-dword value;
+ATPSetResponseTimeout(dword value)
 {
   atpresptimeout = value;
 }
@@ -529,13 +507,7 @@ int async;			/* boolean - true means runs async */
  *
 */
 private void
-atp_listener(skt,type,iov,iovlen,packet_length,addr)
-u_char skt;
-u_char type;
-struct iovec *iov;
-int iovlen;
-int packet_length;
-AddrBlock *addr;
+atp_listener(u_char skt,u_char type,struct iovec *iov,int iovlen,int packet_length,AddrBlock *addr)
 {
   ATP *atp;
   char *pkt_data;			/* pointer to user data */
@@ -588,13 +560,12 @@ AddrBlock *addr;
  *
 */ 
 private void
-tcb_timeout(tcb)
-TCB *tcb;
+tcb_timeout(TCB *tcb)
 {
   u_char *retries;
 
   if (dbug.db_atp)
-    fprintf(stderr,"atp: tcb_timeout: here with TCB %x\n",tcb);
+    fprintf(stderr,"atp: tcb_timeout: here with TCB %p\n",tcb);
 
   retries = &tcb->abr->proto.atp.atpRetries; /* get retries pointer */
   if (*retries != 0) {		/* exceeded retries? */
@@ -617,19 +588,18 @@ TCB *tcb;
  * that case....
 */
 private void
-rsptimeout(rspcb)
-RspCB *rspcb;
+rsptimeout(RspCB *rspcb)
 {
   /* if skt is zero, then dummy rspcb */
   if (rspcb->atpsocket != 0) {
     if (dbug.db_atp)
-      fprintf(stderr,"atp: removing rspcb %x for timeout\n", rspcb);
+      fprintf(stderr,"atp: removing rspcb %p for timeout\n", rspcb);
     /* assuming we tried to respond! */
     if (rspcb->abr != NULL)
       rspcb->abr->abResult = noRelErr; /* completed */
   } else {
     if (dbug.db_atp)
-      fprintf(stderr,"atp: removing dummy rspcb %x\n", rspcb);
+      fprintf(stderr,"atp: removing dummy rspcb %p\n", rspcb);
   }
   delete_rspcb(rspcb);		/* okay! */
 }
@@ -642,12 +612,7 @@ RspCB *rspcb;
  *
 */
 private boolean
-handle_request(skt, atp, databuf, dblen, addr)
-int skt;
-ATP *atp;
-char *databuf;
-int dblen;
-AddrBlock *addr;
+handle_request(int skt, ATP *atp, char *databuf, int dblen, AddrBlock *addr)
 {
   RspCB *rspcb;
   RqCB *rqcb;
@@ -675,7 +640,7 @@ address mismatch\n");
     rspcb = find_rspcb(skt, atp->transID, addr);
     if (rspcb != NULL) {
       if (dbug.db_atp)
-	fprintf(stderr,"atp: exactly once: rspcb %x\n", rspcb);
+	fprintf(stderr,"atp: exactly once: rspcb %p\n", rspcb);
       /* we should really record the average number of requests that */
       /* have "lost" packets and average number lost per response size */
       if (dbug.db_atp)
@@ -743,7 +708,7 @@ address mismatch\n");
   if (atp->control & atpXO) {
     rspcb = create_rspcb(skt, atp->transID, addr);
     if (dbug.db_atp)
-      fprintf(stderr,"atp: XO: created rspcb %x on socket %d, TID %d\n",
+      fprintf(stderr,"atp: XO: created rspcb %p on socket %d, TID %d\n",
 	      rspcb, skt, ntohs(atp->transID));
     if (atpresptimeout)
       Timeout(rsptimeout, rspcb, atpresptimeout);
@@ -777,10 +742,7 @@ address mismatch\n");
  *
 */
 private boolean
-handle_release(skt, tid, addr)
-int skt;
-int tid;
-AddrBlock *addr;
+handle_release(int skt, int tid, AddrBlock *addr)
 {
   RspCB *rspcb;
 
@@ -810,12 +772,7 @@ AddrBlock *addr;
  *
 */
 private boolean
-handle_response(skt, atp, databuf, dblen, addr)
-int skt;
-ATP *atp;
-char *databuf;
-int dblen;
-AddrBlock *addr;
+handle_response(int skt, ATP *atp, char *databuf, int dblen, AddrBlock *addr)
 {
   TCB *tcb;
   int seqno;
@@ -910,8 +867,7 @@ AddrBlock *addr;
  *
 */
 private OSErr
-atpreqsend(tcb)
-TCB *tcb;
+atpreqsend(TCB *tcb)
 {
   atpProto *ap;
 
@@ -931,8 +887,7 @@ TCB *tcb;
  * Assumes that we need not send data if any was associated with packet.
 */
 private OSErr
-atprelsend(tcb)
-TCB *tcb;
+atprelsend(TCB *tcb)
 {
   atpProto *ap;
 
@@ -954,9 +909,7 @@ TCB *tcb;
  *
 */
 private OSErr
-atpxmitres(abr, bitmap)
-ABusRecord *abr;
-BitMapType bitmap;
+atpxmitres(ABusRecord *abr, BitMapType bitmap)
 {
   int i, err;
   BDS *bds;
@@ -1030,12 +983,9 @@ private int numatpskt = 0;
  * 
 */
 private AtpSkt *
-create_atpskt(skt, raddr)
-int skt;
-AddrBlock *raddr;
+create_atpskt(int skt, AddrBlock *raddr)
 {
   int i;
-  char *calloc();
   AtpSkt *atpskt;
   register AtpSkt *ap;
 
@@ -1068,9 +1018,7 @@ AddrBlock *raddr;
  *  Returns NULL o.w.
 */
 private AtpSkt *
-find_atpskt(skt, raddr)
-int skt;
-AddrBlock *raddr;
+find_atpskt(int skt, AddrBlock *raddr)
 {
   int i;
   AddrBlock *ab;
@@ -1092,8 +1040,7 @@ AddrBlock *raddr;
  * remove a ATP responding socket block
  */
 private int
-delete_atpskt(skt)
-int skt;
+delete_atpskt(int skt)
 {
   int i;
   for (i=0; i < numatpskt; i++)
@@ -1128,9 +1075,7 @@ private QElemPtr rspcb_free; /* list of free items */
  * Doesn't check to see if the rspcb already exists
 */
 private RspCB *
-create_rspcb(skt, tid, raddr)
-int skt, tid;
-AddrBlock *raddr;
+create_rspcb(int skt, int tid, AddrBlock *raddr)
 {
   RspCB *rspcb;
 
@@ -1141,7 +1086,7 @@ AddrBlock *raddr;
       }
 
   if (dbug.db_atp)
-    fprintf(stderr,"atp: create_rspcb: create %x\n",rspcb);
+    fprintf(stderr,"atp: create_rspcb: create %p\n",rspcb);
 
   rspcb->atpTransID = tid;
   if (raddr)			/* dummy rspcb doesn't have */
@@ -1158,12 +1103,11 @@ AddrBlock *raddr;
  * remove a rspcb from the active list
  *
 */
-private
-delete_rspcb(rspcb)
-RspCB *rspcb;
+private void
+delete_rspcb(RspCB *rspcb)
 {
   if (dbug.db_atp)
-    fprintf(stderr,"atp: delete_rspcb: deleting %x\n",rspcb);
+    fprintf(stderr,"atp: delete_rspcb: deleting %p\n",rspcb);
 
   dq_elem(&rspcblist[rspcb_hash(rspcb->atpsocket)], &rspcb->link);
   if (rspcb->callback != NULL)
@@ -1181,9 +1125,7 @@ struct rspcb_match_info {
 };
 
 private boolean
-match_rspcb(rspcb, info)
-RspCB *rspcb;
-struct rspcb_match_info *info;
+match_rspcb(RspCB *rspcb, struct rspcb_match_info *info)
 {
   return(info->skt == rspcb->atpsocket &&
 	 info->tid == rspcb->atpTransID &&
@@ -1192,9 +1134,7 @@ struct rspcb_match_info *info;
 }
 
 private RspCB *
-find_rspcb(skt, tid, raddr)
-int skt, tid;
-AddrBlock *raddr;
+find_rspcb(int skt, int tid, AddrBlock *raddr)
 {
   struct rspcb_match_info info;
 
@@ -1207,16 +1147,13 @@ AddrBlock *raddr;
  *
 */
 private boolean
-match_rspcb_abr(rspcb, abr)
-RspCB *rspcb;
-ABusRecord *abr;
+match_rspcb_abr(RspCB *rspcb, ABusRecord *abr)
 {
   return(abr == rspcb->abr);
 }
 
 private RspCB *
-find_rspcb_abr(abr)
-ABusRecord *abr;
+find_rspcb_abr(ABusRecord *abr)
 {
 
   return((RspCB *)q_mapf(rspcblist[rspcb_hash(abr->proto.atp.atpSocket)],
@@ -1228,17 +1165,14 @@ ABusRecord *abr;
  *
 */
 private boolean
-match_rspcb_skt(rspcb, skt)
-RspCB *rspcb;
-void *skt;
+match_rspcb_skt(RspCB *rspcb, void *skt)
 {
   int sk = (int)skt;
   return(sk == rspcb->atpsocket);
 }
 
 private RspCB *
-find_rspcb_skt(skt)
-int skt;
+find_rspcb_skt(int skt)
 {
   return((RspCB *)q_mapf(rspcblist[rspcb_hash(skt)], match_rspcb_skt, 
 					(void *)skt));
@@ -1267,11 +1201,7 @@ private QElemPtr rqcb_free;	/* list of free items */
  * Doesn't check to see if the rqcb already exists
 */
 private RqCB *
-create_rqcb(skt, abr, callback, cbarg)
-int skt;
-ABusRecord *abr;
-int (*callback)();
-caddr_t cbarg;
+create_rqcb(int skt, ABusRecord *abr, int (*callback)(ABusRecord *abr, caddr_t cbarg), caddr_t cbarg)
 {
   RqCB *rqcb;
 
@@ -1282,7 +1212,7 @@ caddr_t cbarg;
       }
 
   if (dbug.db_atp)
-    fprintf(stderr,"atp: creat_rqcb: create %x\n",rqcb);
+    fprintf(stderr,"atp: creat_rqcb: create %p\n",rqcb);
 
   rqcb->atpsocket = skt;
   rqcb->abr = abr;
@@ -1298,32 +1228,26 @@ caddr_t cbarg;
  */
 
 private boolean
-match_rqcb_abr(rqcb, abr)
-RqCB *rqcb;
-ABusRecord *abr;
+match_rqcb_abr(RqCB *rqcb, ABusRecord *abr)
 {
   return(abr == rqcb->abr);
 }
 
 private RqCB *
-find_rqcb_abr(abr)
-ABusRecord *abr;
+find_rqcb_abr(ABusRecord *abr)
 {
   return((RqCB *)q_mapf(rqcblist[rqcb_hash(abr->proto.atp.atpSocket)],
 	match_rqcb_abr, abr));
 }
 
 private boolean
-match_rqcb(rqcb, skt)
-RqCB *rqcb;
-int skt;
+match_rqcb(RqCB *rqcb, int skt)
 {
   return(skt == rqcb->atpsocket);
 }
 
 private RqCB *
-find_rqcb(skt)
-int skt;
+find_rqcb(int skt)
 {
   return((RqCB *)q_mapf(rqcblist[rqcb_hash(skt)], match_rqcb, (void *)skt));
 }
@@ -1333,13 +1257,12 @@ int skt;
  *
  */
 
-private
-delete_rqcb(rqcb)
-RqCB *rqcb;
+private void
+delete_rqcb(RqCB *rqcb)
 {
 
   if (dbug.db_atp)
-    fprintf(stderr,"atp: delete_rqcb: deleting %x\n",rqcb);
+    fprintf(stderr,"atp: delete_rqcb: deleting %p\n",rqcb);
 
   dq_elem(&rqcblist[rqcb_hash(rqcb->atpsocket)], &rqcb->link);
   if (rqcb->callback != NULL)
@@ -1362,11 +1285,7 @@ private u_short next_TID = 0;	/* 16 bits of tids */
 private int tidded = 0;		/* have we randomized the tid yet? */
 
 private TCB *
-create_tcb(skt, abr, callback, cbarg)
-int skt;
-ABusRecord *abr;
-int (*callback)();
-caddr_t cbarg;
+create_tcb(int skt, ABusRecord *abr, int (*callback)(ABusRecord *abr, caddr_t cbarg), caddr_t cbarg)
 {
   TCB *tcb;
   atpProto *atpproto;
@@ -1379,7 +1298,7 @@ caddr_t cbarg;
       }
 
   if (dbug.db_atp)
-    fprintf(stderr,"atp: create_tcb: creating %x\n",tcb);
+    fprintf(stderr,"atp: create_tcb: creating %p\n",tcb);
 
   tcb->abr = abr;
   atpproto = &abr->proto.atp;
@@ -1420,17 +1339,13 @@ struct tcb_match_info {
 };
 
 private boolean
-match_tcb(tcb, info)
-TCB *tcb;
-struct tcb_match_info *info;
+match_tcb(TCB *tcb, struct tcb_match_info *info)
 {
   return(info->tid == tcb->atp.transID && info->skt == tcb->skt);
 }
 
 private TCB *
-find_tcb(skt, tid)
-int skt;
-int tid;
+find_tcb(int skt, int tid)
 {
   struct tcb_match_info info;
   info.tid = tid, info.skt = skt;
@@ -1439,26 +1354,22 @@ int tid;
 
 
 private boolean
-match_tcb_abr(tcb, abr)
-TCB *tcb;
-ABusRecord *abr;
+match_tcb_abr(TCB *tcb, ABusRecord *abr)
 {
   return(abr == tcb->abr);
 }
 
 private TCB *
-find_tcb_abr(abr)
-ABusRecord *abr;
+find_tcb_abr(ABusRecord *abr)
 {
   return((TCB *)q_mapf(tcblist, match_tcb_abr, abr));
 }
 
-private
-delete_tcb(tcb)
-TCB *tcb;
+private 
+void delete_tcb(TCB *tcb)
 {
   if (dbug.db_atp)
-    fprintf(stderr,"atp: delete_tcb: deleting %x\n",tcb);
+    fprintf(stderr,"atp: delete_tcb: deleting %p\n",tcb);
 
   dq_elem(&tcblist, &tcb->link);
   if (tcb->callback != NULL)
@@ -1467,22 +1378,19 @@ TCB *tcb;
 }
 
 private boolean
-match_tcb_skt(tcb, skt)
-TCB *tcb;
-int skt;
+match_tcb_skt(TCB *tcb, int skt)
 {
   return(skt == tcb->skt);
 }
 
 private
-delete_tcb_skt(skt)
-int skt;
+void delete_tcb_skt(int skt)
 {
   TCB *tcb;
 
   while ((tcb = (TCB *)q_mapf(tcblist, match_tcb_skt, (void *)skt)) != NULL) {
     if (dbug.db_atp)
-      fprintf(stderr,"atp: delete_tcb_skt: deleting %x\n",tcb);
+      fprintf(stderr,"atp: delete_tcb_skt: deleting %p\n",tcb);
     dq_elem(&tcblist, &tcb->link);
     q_tail(&tcb_free, &tcb->link); /* add to free list */
   }
@@ -1492,11 +1400,7 @@ int skt;
 
 
 private int
-ATPWrite(ap,atp,dp,dl)
-atpProto *ap;
-ATP *atp;
-char *dp;
-int dl;
+ATPWrite(atpProto *ap,ATP *atp,char *dp,int dl)
 {
   ABusRecord abr;
   ddpProto *ddpr;

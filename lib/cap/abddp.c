@@ -31,6 +31,7 @@
 #endif	/* linux */
 #include <netat/appletalk.h>
 #include <netinet/in.h>
+#include "abddp.h"
 
 #include "cap_conf.h"
 
@@ -144,10 +145,7 @@ DDPInit()
  * 
 */
 private OSErr
-iDDPOpenSocketIOV(skt, iov, iovlen)
-int *skt;
-struct iovec *iov;
-int iovlen;
+iDDPOpenSocketIOV(int *skt, struct iovec *iov, int iovlen)
 {
   int refcd;
   int s;
@@ -230,8 +228,7 @@ int iovlen;
 */
 
 OSErr
-DDPCloseSocket(skt)
-int skt;
+DDPCloseSocket(int skt)
 {
   if (skt == 0 || skt >= ddpMaxSkt) {
     if (dbug.db_ddp)
@@ -265,10 +262,7 @@ abRecPtr abr;
 */
 /*ARGSUSED*/
 OSErr
-DDPWriteIOV(abr,iov,iovl)
-abRecPtr abr;
-struct iovec iov[];
-int iovl;
+DDPWriteIOV(abRecPtr abr,struct iovec iov[],int iovl)
 {
   DDP ddp;
   ddpProto *dpr;

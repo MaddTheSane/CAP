@@ -32,6 +32,7 @@
 #include <netat/abqueue.h>
 #include <netat/sysvcompat.h>	/* this definitely doesn't belong here!! */
 /* but there's no way that I'm going through 50 files to fix it */
+#include <stdbool.h>
 
 /* misc structures */
 
@@ -486,7 +487,7 @@ extern DBUG dbug;
 #define private static
 #define export
 #define import extern
-typedef int boolean;
+typedef bool boolean;
 
 /* levels of registers - we declare importance of different register */
 /* vars this way */

@@ -44,7 +44,7 @@ typedef struct TCB {
   QElem link;
   ATP atp;			/* atp header */
   int skt;			/* local side socket */
-  int (*callback)();
+  int (*callback)(ABusRecord *abr, caddr_t cbarg);
   caddr_t cbarg;			/* call back argument */
   ABusRecord *abr;
 } TCB;
@@ -83,7 +83,7 @@ typedef struct {
   int atpTransID;		/* requesting transaction id */
   AddrBlock atpAddress;		/* address of remote */
   ABusRecord *abr;		/* pointer to abus record */
-  int (*callback)();
+  int (*callback)(ABusRecord *abr, caddr_t cbarg);
   caddr_t cbarg;			/* call back argument */
 } RspCB;
 
@@ -100,22 +100,22 @@ typedef struct {
 
 #define NUMATPSKT 5		/* up to 5 responding circuits */
 
-private RspCB *find_rspcb();
-private RspCB *find_rspcb_abr();
-private RspCB *create_rspcb();
-private RspCB *find_rspcb_skt();
-private int delete_rspcb();
+private RspCB *find_rspcb(int skt, int tid, AddrBlock *raddr);
+private RspCB *find_rspcb_abr(ABusRecord *abr);
+private RspCB *create_rspcb(int skt, int tid, AddrBlock *raddr);
+private RspCB *find_rspcb_skt(int skt);
+private void delete_rspcb(RspCB *rspcb);
 
-private TCB *create_tcb();
-private delete_tcb();
-private TCB *find_tcb();
-private TCB *find_tcb_abr();
+private TCB *create_tcb(int skt, ABusRecord *abr, int (*callback)(ABusRecord *abr, caddr_t cbarg), caddr_t cbarg);
+private void delete_tcb(TCB *tcb);
+private TCB *find_tcb(int skt, int tid);
+private TCB *find_tcb_abr(ABusRecord *abr);
 
-private RqCB *create_rqcb();
-private RqCB *find_rqcb_abr();
-private RqCB *find_rqcb();
-private delete_rqcb();
+private RqCB *create_rqcb(int skt, ABusRecord *abr, int (*callback)(ABusRecord *abr, caddr_t cbarg), caddr_t cbarg);
+private RqCB *find_rqcb_abr(ABusRecord *abr);
+private RqCB *find_rqcb(int skt);
+private void delete_rqcb(RqCB *rqcb);
 
-private AtpSkt *create_atpskt();
-private AtpSkt *find_atpskt();
-private int delete_atpskt();
+private AtpSkt *create_atpskt(int skt, AddrBlock *raddr);
+private AtpSkt *find_atpskt(int skt, AddrBlock *raddr);
+private int delete_atpskt(int skt);

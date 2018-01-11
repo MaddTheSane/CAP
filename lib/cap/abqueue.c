@@ -37,8 +37,7 @@
  *
 */
 
-void remque(elem)
-QElemPtr elem;
+void remque(QElemPtr elem)
 {
   (elem->q_back)->q_forw = elem->q_forw;
   (elem->q_forw)->q_back = elem->q_back;
@@ -53,8 +52,7 @@ QElemPtr elem;
  *
 */
 
-void insque(elem,pred)
-QElemPtr elem,pred;
+void insque(QElemPtr elem,QElemPtr pred)
 {
   elem->q_forw = pred->q_forw;
   elem->q_back = pred;
@@ -75,9 +73,7 @@ QElemPtr elem,pred;
 */
 
 void
-q_tail(head,ntail)
-QElemPtr *head;			/* pointer to the head of the queue */
-QElemPtr ntail;
+q_tail(QElemPtr *head,QElemPtr ntail)
 {
   if (*head == NILQ) {		/* is this an empty queue? */
     *head = ntail;		/* yes, first item is now head */
@@ -98,9 +94,7 @@ QElemPtr ntail;
 */
  
 void
-q_head(head,nhead)
-QElemPtr *head;			/* pointer to the head of the queue */
-QElemPtr nhead;
+q_head(QElemPtr *head,QElemPtr nhead)
 {
 
   if (*head == NILQ) {		/* is this an empty queue? */
@@ -118,10 +112,7 @@ QElemPtr nhead;
  *
 */
 void
-q_elem(head, prev, item)
-QHead head;
-QElemPtr prev;
-QElemPtr item;
+q_elem(QHead head, QElemPtr prev, QElemPtr item)
 {
   if (*head == NILQ || prev == NILQ)
     q_head(head, item);
@@ -141,8 +132,7 @@ QElemPtr item;
 */
  
 QElemPtr
-dq_tail(head)
-QElemPtr *head;
+dq_tail(QElemPtr *head)
 {
   QElemPtr tail;
 
@@ -170,8 +160,7 @@ QElemPtr *head;
 */
 
 QElemPtr
-dq_head(head)
-QHead head;
+dq_head(QHead head)
 {
   QElemPtr nhead,ohead;
 
@@ -195,9 +184,7 @@ QHead head;
 */
 
 void
-dq_elem(head,item)
-QHead head;
-QElemPtr item;
+dq_elem(QHead head,QElemPtr item)
 {
   if (*head == NILQ)
     return;			/* can't remove from empty list! */
@@ -222,10 +209,7 @@ QElemPtr item;
 */ 
 
 QElemPtr
-q_mapf(head,filter,arg)
-QElemPtr head;
-int (*filter)();
-void *arg;
+q_mapf(QElemPtr head,bool (*filter)(QElemPtr step, void *arg),void *arg)
 {
   QElemPtr step;
 
@@ -250,10 +234,7 @@ void *arg;
 */
  
 QElemPtr
-q_mapb(head,filter,arg)
-QElemPtr head;
-int (*filter)();
-void *arg;
+q_mapb(QElemPtr head,int (*filter)(QElemPtr step, void *arg),void *arg)
 {
   QElemPtr step;
 
@@ -280,10 +261,7 @@ void *arg;
 */
  
 QElemPtr
-q_map_min(head,filter,arg)
-QElemPtr head;
-int (*filter)();
-void *arg;
+q_map_min(QElemPtr head,int (*filter)(QElemPtr step, void *arg),void *arg)
 {
   QElemPtr step;
   QElemPtr rv;
