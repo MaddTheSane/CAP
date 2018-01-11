@@ -11,7 +11,7 @@
 #define	NULL	0
 
 #ifdef BYTESWAPPED
-unsigned long byteswap();
+static unsigned int byteswap(unsigned int x);
 #endif BYTESWAPPED
 
 /* Tables defined in the Data Encryption Standard documents */
@@ -169,8 +169,11 @@ static int nibblebit[] = {
 	 010,04,02,01
 };
 static int desmode;
-static permute(), round(), perminit(), spinit();
-static long f();
+static void permute(char *inblock,char *,char perm[16][16][8]);
+static void round(int num,unsigned int *block);
+static void perminit(char perm[16][16][8],char p[64]);
+static int spinit(void);
+static int f(unsigned int r,unsigned char subkey[8]);
 
 /* Allocate space and initialize DES lookup arrays
  * mode == 0: standard Data Encryption Algorithm
@@ -178,8 +181,7 @@ static long f();
  * mode == 2: DEA without permutations and with 128-byte key (completely
  *            independent subkeys for each round)
  */
-desinit(mode)
-int mode;
+int desinit(int mode)
 {
 	char *malloc();
 
@@ -221,7 +223,7 @@ int mode;
 	return 0;
 }
 /* Free up storage used by DES */
-desdone()
+void desdone()
 {
 	if(sp == NULL)
 		return;	/* Already done */
@@ -239,7 +241,7 @@ desdone()
 	kn = NULL;
 }
 /* Set key (initialize key schedule array) */
-dessetkey(key)
+void dessetkey(key)
 char *key;			/* 64 bits (will use only 56) */
 {
 	char pc1m[56];		/* place to modify pc1 into */
@@ -288,11 +290,11 @@ char *key;			/* 64 bits (will use only 56) */
 	}
 }
 /* In-place encryption of 64-bit block */
-endes(block)
+void endes(block)
 char *block;
 {
 	register int i;
-	unsigned long work[2]; 		/* Working data storage */
+	unsigned int work[2]; 		/* Working data storage */
 	long tmp;
 
 	permute(block,iperm,(char *)work);	/* Initial Permutation */
@@ -317,12 +319,12 @@ char *block;
 	permute((char *)work,fperm,block);	/* Inverse initial permutation */
 }
 /* In-place decryption of 64-bit block */
-dedes(block)
+void dedes(block)
 char *block;
 {
 	register int i;
-	unsigned long work[2];	/* Working data storage */
-	long tmp;
+	unsigned int work[2];	/* Working data storage */
+	int tmp;
 
 	permute(block,iperm,(char *)work);	/* Initial permutation */
 
@@ -349,10 +351,10 @@ char *block;
 }
 
 /* Permute inblock with perm */
-static
-permute(inblock,perm,outblock)
-char *inblock, *outblock;		/* result into outblock,64 bits */
-char perm[16][16][8];			/* 2K bytes defining perm. */
+static void
+permute(char *inblock,char *outblock,char perm[16][16][8])
+//char *inblock, *outblock;		/* result into outblock,64 bits */
+//char perm[16][16][8];			/* 2K bytes defining perm. */
 {
 	register int i,j;
 	register char *ib, *ob;		/* ptr to input or output block */
@@ -380,10 +382,10 @@ char perm[16][16][8];			/* 2K bytes defining perm. */
 }
 
 /* Do one DES cipher round */
-static
-round(num,block)
-int num;				/* i.e. the num-th one	 */
-unsigned long *block;
+static void
+round(int num,unsigned int *block)
+//int num;				/* i.e. the num-th one	 */
+//unsigned long *block;
 {
 	/* The rounds are numbered from 0 to 15. On even rounds
 	 * the right half is fed to f() and the result exclusive-ORs
@@ -397,12 +399,12 @@ unsigned long *block;
 }
 /* The nonlinear function f(r,k), the heart of DES */
 static
-long
-f(r,subkey)
-unsigned long r;		/* 32 bits */
-unsigned char subkey[8];	/* 48-bit key for this round */
+int
+f(unsigned int r,unsigned char subkey[8])
+//unsigned long r;		/* 32 bits */
+//unsigned char subkey[8];	/* 48-bit key for this round */
 {
-	register unsigned long rval,rt;
+	register unsigned int rval,rt;
 #ifdef TRACE
 	unsigned char *cp;
 	int i;
@@ -436,9 +438,9 @@ unsigned char subkey[8];	/* 48-bit key for this round */
 }
 /* initialize a perm array */
 static
-perminit(perm,p)
-char perm[16][16][8];			/* 64-bit, either init or final */
-char p[64];
+void perminit(char perm[16][16][8],char p[64])
+//char perm[16][16][8];			/* 64-bit, either init or final */
+//char p[64];
 {
 	register int l, j, k;
 	int i,m;
@@ -504,9 +506,8 @@ spinit()
 #ifdef	BYTESWAPPED
 /* Byte swap a long */
 static
-unsigned long
-byteswap(x)
-unsigned long x;
+unsigned int
+byteswap(unsigned int x)
 {
 	register char *cp,tmp;
 

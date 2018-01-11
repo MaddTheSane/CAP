@@ -25,3 +25,5 @@ Thumbs.db
 m4.features
 support/capd/makefile
 doc/install.doc
+libsmade
+*.a

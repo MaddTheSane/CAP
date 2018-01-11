@@ -73,8 +73,7 @@ private char *afperrs[NUMERR] = {
   "Folder inside Trash folder"				/* 5044 */
 };
 
-char *afperr(err)
-int err;
+char *afperr(int err)
 {
   static char errbuf[50];
   int e;
@@ -90,9 +89,7 @@ int err;
   return(afperrs[e]);
 }
 
-aerror(msg, err)
-char *msg;
-int err;
+void aerror(char *msg, int err)
 {
   int e ;
 
