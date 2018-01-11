@@ -4,6 +4,9 @@
  * $Revision: 2.2 $
 */
 
+#ifndef __CAP_AFPC_H__
+#define __CAP_AFPC_H__
+
 /*
  * abafpcmd.h - header file for AppleTalk Filing Protocol Client routines
  *
@@ -22,3 +25,5 @@
 #define USE_UAM_CLEAR 1
 #define USE_UAM_RANDNUM 2
 #define USE_UAM_2WAYRAND 3
+
+#endif

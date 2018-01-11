@@ -4,6 +4,9 @@
  * $Revision: 2.1 $
 */
 
+#ifndef __CAP_ABNBP_H__
+#define __CAP_ABNBP_H__
+
 /*
  * abnbp.h - Name Binding Protocol definitions
  *
@@ -129,3 +132,5 @@ typedef struct {
   byte lapddp[lapSize+ddpSize];
   NBP nbp;
 } NBPpkt;
+
+#endif

@@ -1801,7 +1801,7 @@ ifelse(os,[pyr],[
 ifelse(os,[next],[
     define([cflags],concat(cflags,[ -DNeXT -DADDRINPACK]))])
 ifelse(os,[macosx],[
-    define([cflags],concat(cflags,[ -DNeXT -DADDRINPACK -DUSEDIRENT]))])
+    define([cflags],concat(cflags,[ -DNeXT -DADDRINPACK -DUSEDIRENT -DCAP_MACOSX]))])
 ifelse(os,[xenix5],[
     define([cflags],concat(cflags,[ -Dxenix5 -I$I -DLAI_TCP -Di386]))])
 ifelse(os,[aix],[

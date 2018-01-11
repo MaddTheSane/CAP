@@ -4,6 +4,9 @@
  * $Revision: 2.1 $
 */
 
+#ifndef __CAP_COMPAT_H__
+#define __CAP_COMPAT_H__
+
 /*
  * compat.h - tries to cover up differences between various BSD based
  * machines
@@ -68,4 +71,6 @@ typedef struct gfd_set {
 #endif
 #ifndef S_ISREG
 #define S_ISREG(mode) (((mode) & S_IFMT) == S_IFREG)
+#endif
+
 #endif

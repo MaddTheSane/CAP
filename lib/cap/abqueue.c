@@ -37,7 +37,7 @@
  *
 */
 
-remque(elem)
+void remque(elem)
 QElemPtr elem;
 {
   (elem->q_back)->q_forw = elem->q_forw;
@@ -53,7 +53,7 @@ QElemPtr elem;
  *
 */
 
-insque(elem,pred)
+void insque(elem,pred)
 QElemPtr elem,pred;
 {
   elem->q_forw = pred->q_forw;

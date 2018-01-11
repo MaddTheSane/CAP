@@ -5,6 +5,9 @@
  *
  */
 
+#ifndef __CAP_AFPPASS_H__
+#define __CAP_AFPPASS_H__
+
 /*
  * AUFS Distributed Passwords
  *
@@ -72,7 +75,7 @@ struct afppass {
 
 #ifndef AFP_DISTPW_PASS
 #define AFP_DISTPW_PASS		"%-[&'*!~"
-#endif  AFP_DISTPW_PASS
+#endif  //AFP_DISTPW_PASS
 
 /*
  * Misc files & permission.
@@ -81,15 +84,15 @@ struct afppass {
 
 #ifndef AFP_DISTPW_FILE
 #define AFP_DISTPW_FILE		"/usr/local/lib/cap/afppass"
-#endif  AFP_DISTPW_FILE
+#endif  //AFP_DISTPW_FILE
 
 #ifndef AFP_DISTPW_USER
 #define AFP_DISTPW_USER		".afppass"
-#endif  AFP_DISTPW_USER
+#endif  //AFP_DISTPW_USER
 
 #ifndef AFP_DISTPW_MODE
 #define AFP_DISTPW_MODE		0600
-#endif  AFP_DISTPW_MODE
+#endif  //AFP_DISTPW_MODE
 
 /*
  * Misc numbers.
@@ -99,3 +102,5 @@ struct afppass {
 #define SECS_IN_DAY		24*60*60
 #define SECS_IN_MON		30*24*60*60
 #define SECS_10_YRS		10*365*24*60*60
+
+#endif

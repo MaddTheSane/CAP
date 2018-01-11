@@ -5,6 +5,9 @@
  *
 */
 
+#ifndef __CAP_ABERRORS_H__
+#define __CAP_ABERRORS_H__
+
 /*
  * aberrors.h - AppleTalk Errors
  *
@@ -81,3 +84,4 @@
 #define TooManyClients -1074
 #define NoAck -1075
 
+#endif

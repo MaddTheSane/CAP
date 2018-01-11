@@ -5,6 +5,9 @@
  *
  */
 
+#ifndef __CAP_AFPCMD_H__
+#define __CAP_AFPCMD_H__
+
 /*
  * abafpcmd.h - header file for AppleTalk Filing Protocol Command Packets
  *
@@ -721,3 +724,5 @@ typedef struct {		/* type for packing offset objects */
   int optr_len;
   byte *optr_loc;
 } OPTRType;
+
+#endif

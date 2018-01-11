@@ -4,6 +4,9 @@
  * $Revision: 2.2 $
 */
 
+#ifndef _MACFILE
+#define _MACFILE
+
 /*
  * macfile.h - header file with Macintosh file definitions
  *
@@ -17,8 +20,6 @@
  *  Sept 1987	Created by Charlie
  *
  */
-
-#ifndef _MACFILE
 
 #define MAXCLEN 199		/* max size of a comment string */
 #define FINFOLEN 32		/* Finder info is 32 bytes */
@@ -118,5 +119,4 @@ typedef union {
   fileFinderInfo file;
 } FinderInfo;
 
-#define _MACFILE
 #endif /* MACFILE */

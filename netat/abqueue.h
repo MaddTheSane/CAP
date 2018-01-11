@@ -4,6 +4,9 @@
  * $Revision: 2.1 $
 */
 
+#ifndef __CAP_ABQUEUE_H__
+#define __CAP_ABQUEUE_H__
+
 /*
  * abqueue.h - header file for abqueue and abqueue users 
  *
@@ -31,3 +34,4 @@ void q_tail();
 QElemPtr dq_head(),dq_tail();
 QElemPtr q_next(),q_prev();
 
+#endif

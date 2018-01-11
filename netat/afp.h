@@ -5,6 +5,9 @@
  *
  */
 
+#ifndef __CAP_AFP_H__
+#define __CAP_AFP_H__
+
 /*
  * afp.h - header file for AppleTalk Filing Protocol
  *
@@ -21,7 +24,7 @@
 
 #ifndef _MACFILE
 #include <netat/macfile.h>
-#endif  _MACFILE
+#endif  //_MACFILE
 
 /* AFP Errors.  The little "ae" prevents conflicts with other codes */
 
@@ -285,3 +288,5 @@ typedef struct {		/* FileDirParms */
 #define ASIP_PORT 548		/* AppleShare over TCP/IP well-known port */
 
 char *afperr();			/* in afperr.c */
+
+#endif

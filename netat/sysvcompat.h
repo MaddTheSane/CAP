@@ -50,7 +50,7 @@
 # define LB_SET		3	/* abs. block offset */
 # define LB_INCR	4	/* rel. block offset */
 # define LB_XTND	5	/* block offset rel. to eof */
-#endif SOLARIS
+#endif //SOLARIS
 
 #ifdef hpux
 # define B2S_STRING_MAPON	/* map strings */
@@ -64,17 +64,17 @@
 # define NODUP2			/* no dup2 */
 # define NOLSTAT		/* no symbolic links */
 # define NOPGRP			/* no process groups (setpgrp, killpg) */
-#else  __hpux
+#else  //__hpux
 # define _BSD
 # define POSIX
 # define NOWAIT3		/* no rusage support for AUFS under HP-UX */
 # define WSTATUS union wait     /* at least for HP-UX 9.01 if _BSD ... */
 /* # define ADDRINPACK */
-#endif __hpux
+#endif //__hpux
 # define USERAND		/* use srand, rand */
 # define USEGETCWD		/* use getcwd instead of bsd getwd */
 # define NOUTIMES		/* no utimes - use utime */
-#endif hpux
+#endif //hpux
 
 #ifdef aux
 # define B2S_STRING_MAPON	/* map strings */
@@ -83,7 +83,7 @@
 # define USETIMES		/* use times instead of getrusage */
 # define USERAND		/* use srand, rand */
 # define NOVFORK		/* no vfork in system */
-#endif aux
+#endif //aux
 
 #ifdef uts
 # define USETIMES	/* getrusage - "use times not rusage" */
@@ -100,7 +100,7 @@
 # define USEDIRENT     /* use struct dirent */
 # define USESTRINGDOTH /* use system V string.h */
 # define USESYSVLP	/* use system V lp command instead of lpr */
-#endif uts
+#endif //uts
 
 #ifdef xenix5
 # define B2S_STRING_MAPON	/* map strings */
@@ -124,16 +124,16 @@
 # define L_SET	0
 # define L_INCR	1
 # define L_XTND	2
-#endif xenix5
+#endif //xenix5
 
 #ifdef drsnx
 #define USESYSVLP
 #define USEDIRENT
-#endif drsnx
+#endif //drsnx
 
 #ifdef EPIX
 #define WSTATUS union wait
-#endif EPIX
+#endif //EPIX
 
 #if defined (hp300) && !defined(__BSD_4_4__)
 #define WSTATUS union wait
@@ -147,14 +147,19 @@
 #define W_RETCODE(status) ((status).w_retcode)
 #endif /* NeXT */
 
+#ifdef CAP_MACOSX
+# define NEEDFCNTLDOTH		/* if need fcntl.h for O_... */
+
+#endif /* CAP_MACOSX */
+
 /* FIXED CONFIGURATION -- ALL NEW CONFIGURATIONS MUST PRECEED */
 
 /* map sigcld to sigchld if sigchld isn't there */
 #ifndef SIGCHLD
 # ifdef SIGCLD
 #  define SIGCHLD SIGCLD
-# endif SIGCLD
-#endif  SIGCHLD
+# endif //SIGCLD
+#endif  //SIGCHLD
 
 #ifdef B2S_STRING_MAPON
 # ifndef USESTRINGDOTH
@@ -162,17 +167,17 @@
 # endif  USESTRINGDOTH
 # define index(s,c)	strchr((char *)(s),(c))
 # define rindex(s,c)	strrchr((char *)(s),(c))
-#endif B2S_STRING_MAPON
+#endif //B2S_STRING_MAPON
 
 #ifdef B2S_BSTRING_MAPON
 # ifdef SOLARIS
 #  define bcopy(s,d,l)	memmove((char *)(d),(char *)(s),(l))
-# else  SOLARIS
+# else  //SOLARIS
 #  define bcopy(s,d,l)	memcpy((char *)(d),(char *)(s),(l))
-# endif SOLARIS
+# endif //SOLARIS
 # define bcmp(b1,b2,l)	memcmp((char *)(b1),(char *)(b2),(l))
 # define bzero(b,l)	memset((char *)(b),0,(l))
-#endif B2S_BSTRING_MAPON
+#endif //B2S_BSTRING_MAPON
 
 /*
  *  WAIT/WAIT3 Compatibility Section
@@ -200,38 +205,38 @@
 
 #ifndef WSTATUS
 #define WSTATUS int
-#endif  WSTATUS
+#endif  //WSTATUS
 
 #ifndef WIFSTOPPED
 #define WIFSTOPPED(status)	((*((int *)&status) & 0xff) == 0177)
-#endif  WIFSTOPPED
+#endif  //WIFSTOPPED
 
 #ifndef WIFSIGNALED
 #define WIFSIGNALED(status)	((*((int *)&status) & 0177) != 0)
-#endif  WIFSIGNALED
+#endif  //WIFSIGNALED
 
 #ifndef W_TERMSIG
 #ifdef  WTERMSIG
 #define W_TERMSIG WTERMSIG
-#else   WTERMSIG
+#else   //WTERMSIG
 #define W_TERMSIG(status)	(*((int *)&status) & 0177)
-#endif  WTERMSIG
-#endif  W_TERMSIG
+#endif  //WTERMSIG
+#endif  //W_TERMSIG
 
 #ifndef W_COREDUMP
 #ifdef  WCOREDUMP
 #define W_COREDUMP WCOREDUMP
-#else   WCOREDUMP
+#else   //WCOREDUMP
 #define W_COREDUMP(status)	(*((int *)&status) & 0200)
-#endif  WCOREDUMP
-#endif  W_COREDUMP
+#endif  //WCOREDUMP
+#endif  //W_COREDUMP
 
 #ifndef W_RETCODE
 #ifdef  WEXITSTATUS
 #define W_RETCODE WEXITSTATUS
-#else   WEXITSTATUS
+#else   //WEXITSTATUS
 #define W_RETCODE(status)	(*((int *)&status) >> 8)
-#endif  WEXITSTATUS
-#endif  W_RETCODE
+#endif  //WEXITSTATUS
+#endif  //W_RETCODE
 
 #endif /* _sysvcompat_h_ */

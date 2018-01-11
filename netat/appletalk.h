@@ -4,6 +4,9 @@
  * $Revision: 2.8 $
 */
 
+#ifndef __CAP_APPLETALK_H__
+#define __CAP_APPLETALK_H__
+
 /*
  * appletalk.h - Appletalk definitions
  *
@@ -43,10 +46,10 @@ typedef short sword;
 /* The alpha has 64bit longs */
 typedef unsigned int dword;
 typedef int sdword;
-#else	__alpha
+#else	//__alpha
 typedef unsigned long dword;
 typedef long sdword;
-#endif	__alpha
+#endif	//__alpha
 
 typedef int OSErr;
 
@@ -358,9 +361,9 @@ typedef struct atpProto {
   atpUserDataType atpUserData;	/* user bytes */
 #ifdef AIX
   unsigned fatpXO : 1,		/* exactly once boolean */
-#else  AIX
+#else  //AIX
   byte fatpXO : 1,		/* exactly once boolean */
-#endif AIX
+#endif //AIX
          fatpEOM : 1;		/* end of message boolean */
   byte atpTimeOut;		/* retry timeout interval in seconds */
   byte atpRetries;		/* number of retries - 255 max */
@@ -542,3 +545,4 @@ struct cap_version *what_cap_version();
 #define L_LVL 0xf		/* debug levels */
 #define L_LVLMAX 15		/* maximum level */
 
+#endif

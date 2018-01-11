@@ -19,6 +19,9 @@
  *
  */
 
+#ifndef __CAP_fcntldomv_H__
+#define __CAP_fcntldomv_H__
+
 #define		F_GETLK		7	/* Get file lock */
 #define		F_SETLK		8	/* Set file lock */
 #define		F_RDLCK		01	/* Shared or Read lock. */
@@ -33,3 +36,5 @@ struct flock {
 	short	l_sysid;
 	short   l_pid;		/* Process ID of the lock owner. */
 };
+
+#endif
