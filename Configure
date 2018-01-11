@@ -1483,7 +1483,11 @@ else
   echo "ifdef([X_GETOPT],[],[define([needgetopt],[att_getopt.o])])"
 fi
 echo "# VPRINTF support"
-echo "ifdef([X_VPRINTF],[define([usevprintf], 1)],[])"
+if [ $"{os}" = "macosx" ]; then
+  echo "[define([usevprintf], 1)]"
+else
+  echo "ifdef([X_VPRINTF],[define([usevprintf], 1)],[])"
+fi
 echo
 echo "# Path to cap sources: useful for testing"
 echo "define([cwd],[${mydir}])" 
