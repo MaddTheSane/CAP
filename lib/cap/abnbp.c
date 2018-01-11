@@ -28,6 +28,8 @@
 #include <sys/types.h>
 #include <netat/appletalk.h>
 #include <netat/abnbp.h>
+#include "abddp.h"
+#include "abmisc.h"
 #ifdef USESTRINGDOTH
 # include <string.h>
 #else
@@ -40,24 +42,25 @@ private int nbpSkt = -1;	/* NBP socket number */
 
 /* Public functions */
 
-OSErr nbpInit();		/* initialize NBP */
-OSErr NBPLookup();		/* lookup a name or group of names */
-OSErr NBPConfirm();		/* confirm a name/address pair */
-OSErr NBPExtract();		/* extract entity information after lookup */
+OSErr nbpInit(void);		/* initialize NBP */
+OSErr NBPLookup(nbpProto *abr, boolean async);		/* lookup a name or group of names */
+OSErr NBPConfirm(nbpProto *abr, boolean async);		/* confirm a name/address pair */
+OSErr NBPExtract(NBPTEntry t[],nument,int whichone,EntityName *ent,AddrBlock *addr);		/* extract entity information after lookup */
 
-int nbpMatch();			/* match obj or type using wildcards */
+int nbpMatch(register byte *pat, register byte *thing);			/* match obj or type using wildcards */
 
 /* Internal functions */
 
-private OSErr nbpFcn();		/* common NBP function */
-private void SndNBP();		/* send request to appletalk */
-private void nbp_timeout();	/* timeout monitor */
-private void nbp_listener();	/* DDP listener process */
-private void LkUpReply();	/* handle LkUpReply response */
-private int nbp_match();	/* find matching request upon response */
-private int nbpcpy();		/* copy entity into user buffer */
-private int c2pkt_ename();	/* convert entity name from c to packed */
-private int pkt2c_ename();	/* convert entity name from packed to c */
+private OSErr nbpFcn(nbpProto *abr, int fcn, boolean async);		/* common NBP function */
+private void SndNBP(nbpProto *nbpr);		/* send request to appletalk */
+private void nbp_timeout(nbpProto *nbpr);	/* timeout monitor */
+private void nbp_listener(byte skt,byte type,NBP *nbp,int len,AddrBlock *addr);	/* DDP listener process */
+private void LkUpReply(NBP *nbp, int len);	/* handle LkUpReply response */
+private boolean nbp_match(nbpProto *pr,byte id);	/* find matching request upon response */
+private int nbpcpy(nbpProto *pr,NBP *nbp);		/* copy entity into user buffer */
+private int c2pkt_ename(EntityName *cn,byte *pn);	/* convert entity name from c to packed */
+private int pkt2c_ename(byte *pn,EntityName *cn);	/* convert entity name from packed to c */
+static void StatusReply(NBP *nbp, int len);
 
 /*
  * OSErr nbpInit()
@@ -123,9 +126,7 @@ nbpShutdown()
 */
  
 OSErr
-NBPLookup(abr,async)
-nbpProto *abr;
-int async;
+NBPLookup(nbpProto *abr, boolean async)
 {
   int maxx;
   import word this_net;
@@ -177,9 +178,7 @@ int async;
 */
  
 OSErr
-NBPConfirm(abr,async)
-nbpProto *abr;
-int async;
+NBPConfirm(nbpProto *abr,boolean async)
 {
   return(nbpFcn(abr,tNBPConfirm,async)); /* common function does the work */
 }
@@ -210,10 +209,7 @@ int async;
  */ 
 
 OSErr
-NBPExtract(t,nument,whichone,ent,addr)
-NBPTEntry t[];
-EntityName *ent;
-AddrBlock *addr;
+NBPExtract(NBPTEntry t[],int nument,int whichone,EntityName *ent,AddrBlock *addr)
 {
   if (whichone > nument) {
     fprintf(stderr,"NBPExtract: whichone too large!");
@@ -294,9 +290,7 @@ EntityName *abEntity;
 */
 
 private OSErr
-nbpFcn(abr,fcn,async)
-nbpProto *abr;
-int fcn,async;
+nbpFcn(nbpProto *abr,int fcn,boolean async)
 {
   int rtim;
 
@@ -332,8 +326,7 @@ int fcn,async;
  */
 
 private void
-SndNBP(nbpr)
-nbpProto *nbpr;
+SndNBP(nbpProto *nbpr)
 {
   ABusRecord ddp;
   ddpProto *ddpr;
@@ -420,8 +413,7 @@ nbpProto *nbpr;
 */ 
 
 private void
-nbp_timeout(nbpr)
-nbpProto *nbpr;
+nbp_timeout(nbpProto *nbpr)
 {
   if (dbug.db_nbp)
     printf("NBP nbp_timeout: %d tick timeout on %d, %d remain\n",
@@ -454,11 +446,7 @@ nbpProto *nbpr;
 */
 
 private void
-nbp_listener(skt,type,nbp,len,addr)
-byte skt;
-byte type;
-NBP *nbp;
-AddrBlock *addr;
+nbp_listener(byte skt,byte type,NBP *nbp,int len,AddrBlock *addr)
 {
   /* packet must be large enough and ddp type NBP */
   if (len < nbpMinSize || type != ddpNBP) 
@@ -482,9 +470,7 @@ AddrBlock *addr;
  *
  *
 */
-StatusReply(nbp, len)
-NBP *nbp;
-int len;
+void StatusReply(NBP *nbp, int len)
 {
   nbpProto *pr;
   OSErr errstatus = -1;		/* default to generic one */
@@ -552,9 +538,7 @@ int len;
  */
 
 private void
-LkUpReply(nbp,len)
-NBP *nbp;
-int len;
+LkUpReply(NBP *nbp, int len)
 {
   nbpProto *pr;
   int skt,rslt;
@@ -599,10 +583,8 @@ int len;
  *
 */ 
 
-private int
-nbp_match(pr,id)
-nbpProto *pr;
-byte id;
+private boolean
+nbp_match(nbpProto *pr,byte id)
 {
   return(pr->nbpID == id);
 }
@@ -630,9 +612,7 @@ byte id;
  */
 
 private int
-nbpcpy(pr,nbp)
-nbpProto *pr;
-NBP *nbp;
+nbpcpy(nbpProto *pr,NBP *nbp)
 {
   NBPTuple *ep;
   NBPTEntry *en;
@@ -674,9 +654,7 @@ NBP *nbp;
  *
  */
 private int
-c2pkt_ename(cn,pn)
-byte *pn;
-EntityName *cn;
+c2pkt_ename(EntityName *cn,byte *pn)
 {
   int i, cnt;
   byte *s;
@@ -724,9 +702,7 @@ EntityName *cn;
  */
 
 private int
-pkt2c_ename(pn,cn)
-byte *pn;
-EntityName *cn;
+pkt2c_ename(byte *pn,EntityName *cn)
 {
   int ol,tl,zl;
 
@@ -751,9 +727,7 @@ EntityName *cn;
  *
 */
 void
-create_entity(name, en)
-char *name;
-EntityName *en;
+create_entity(char *name, EntityName *en)
 {
   char *zs, *ts;
   int ol, tl, zl;
@@ -785,7 +759,7 @@ EntityName *en;
 }
 
 #ifdef AUTHENTICATE
-isNBPInited()
+boolean isNBPInited()
 {
   return(nbpSkt > 0);
 }
@@ -796,8 +770,7 @@ isNBPInited()
  */
 
 int
-nbpMatch(pat, thing)
-register byte *pat, *thing;
+nbpMatch(register byte *pat, register byte *thing)
 {
 	register byte *p;
 	register short pl, tl, hl;

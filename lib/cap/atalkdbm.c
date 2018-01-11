@@ -11,9 +11,7 @@
 
 #include <stdio.h>
 #include <ctype.h>
-#if (defined(SOLARIS) || defined(linux))
 #include <unistd.h>
-#endif SOLARIS || linux
 #include <sys/types.h>
 #include <sys/socket.h>
 #include <netinet/in.h>
@@ -25,6 +23,9 @@
 # include <strings.h>
 #endif USESTRINGDOTH
 #include <sys/file.h>
+#include <arpa/inet.h>
+#include <stdlib.h>
+#include <time.h>
 #include "atalkdbm.h"
 
 #ifndef	TAB
@@ -42,8 +43,6 @@
 static int opened = 0;
 #define HAVE_ZONE -1		/* our zone was set */
 #define CONFIGURED 1		/* set when configured */
-
-static int name_toipaddr();
 
 char *linep;
 int linecnt = 0;
@@ -65,6 +64,13 @@ char enet_zone[34];
 char netnumber[64];
 int argsread;
       
+static void getfield(const char *str, int len, boolean quote);
+static int name_toipaddr();
+static void etalkdbupdate(char *name);
+static void editetalkdb(char *str);
+static int atnetshort(register char *st);
+static void matchvariable(char *str);
+
 /*
  * GetMyAddr(AddrBlock)
  * set up AddrBlock to my address.
@@ -72,15 +78,13 @@ int argsread;
  *
  */
 
-GetMyAddr(addr)
-AddrBlock *addr;
+void GetMyAddr(AddrBlock *addr)
 {
   addr->net = this_net;
   addr->node = this_node;
 }
 
-SetMyAddr(addr)
-AddrBlock *addr;
+void SetMyAddr(AddrBlock *addr)
 {
   this_net = nis_net = addr->net;
   this_node = nis_node = addr->node;
@@ -88,15 +92,13 @@ AddrBlock *addr;
 
 /* similarly for nis */
 
-GetNisAddr(addr)
-AddrBlock *addr;
+void GetNisAddr(AddrBlock *addr)
 {
   addr->net = nis_net;
   addr->node = nis_node;
 }
 
-SetNisAddr(addr)
-AddrBlock *addr;
+void SetNisAddr(AddrBlock *addr)
 {
   nis_net = addr->net;
   nis_node = addr->node;
@@ -108,8 +110,7 @@ AddrBlock *addr;
  *
  */
 
-zoneset(zonename)
-u_char *zonename;
+void zoneset(u_char *zonename)
 {
   strncpy((char *)this_zone, (char *)zonename, 32);
   opened = HAVE_ZONE;
@@ -135,8 +136,7 @@ u_char *zonename;
  *
  */
 
-openatalkdb(name)
-char *name;
+void openatalkdb(char *name)
 {
   FILE *fp;
   int a, c;
@@ -294,8 +294,7 @@ char *name;
  *
  */
 
-openetalkdb(name)
-char *name;
+void openetalkdb(char *name)
 {
   FILE *fp, *fopen();
   char line[256], st[64];
@@ -335,8 +334,7 @@ char *name;
  * alter the variable ...
  */
 
-editetalkdb(str)
-char *str;
+void editetalkdb(char *str)
 {
   matchvariable(str);
 }
@@ -348,8 +346,7 @@ char *str;
 
 extern short lap_proto;
 
-etalkdbupdate(name)
-char *name;
+void etalkdbupdate(char *name)
 {
   long now;
   FILE *fp, *fopen();
@@ -420,8 +417,7 @@ char *name;
  *
  */
 
-matchvariable(str)
-char *str;
+void matchvariable(char *str)
 {
   char name[64], value[64];
 #ifdef ISO_TRANSLATE
@@ -476,8 +472,7 @@ char *str;
 /*
  * Get a short number or address.
  */
-atnetshort(st)
-register char *st;
+int atnetshort(register char *st)
 {
   register char *cp;
 
@@ -491,9 +486,7 @@ register char *st;
 
 
 static int
-name_toipaddr(name, ipaddr)
-char *name;
-struct in_addr *ipaddr;
+name_toipaddr(char *name, struct in_addr *ipaddr)
 {
   struct hostent *host;
 
@@ -518,8 +511,7 @@ struct in_addr *ipaddr;
  * escaping with '\'.
  */
 
-getfield(str, len, quote)
-	char *str;
+void getfield(const char *str, int len, boolean quote)
 {
 	register char *lp = linep;
 	register char *cp = str;
@@ -533,7 +525,7 @@ getfield(str, len, quote)
 	len--;	/* save a spot for a null */
 
 	if (*lp == '"' || *lp == '\'') {		/* quoted string */
-		register term = *lp;
+		register char term = *lp;
 
 		if (quote) {
 			*cp++ = term;
@@ -602,8 +594,7 @@ getfield(str, len, quote)
  */
 
 char *
-prZone(zone)
-char *zone;
+prZone(char *zone)
 {
 	int i;
 	static char azone[48];

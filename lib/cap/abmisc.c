@@ -26,6 +26,7 @@
 #include <sys/types.h>
 #include <sys/time.h>
 #include <netat/appletalk.h>
+#include "abmisc.h"
 
 /*
  * cpyc2pstr(char *ps, char *cs)
@@ -36,8 +37,7 @@
  */ 
 
 void
-cpyc2pstr(ps,cs)
-char *ps,*cs;
+cpyc2pstr(char *ps,char *cs)
 {
 
   *ps++ = (u_char) strlen(cs);	/* copy in length, one byte */
@@ -52,8 +52,7 @@ char *ps,*cs;
  */ 
 
 void
-cpyp2cstr(cs,ps)
-char *cs,*ps;
+cpyp2cstr(char*cs,char*ps)
 {
   bcopy(ps+1,cs,(u_char) *ps);
   cs[*ps] = '\0';		/* tie off */
@@ -63,8 +62,7 @@ char *cs,*ps;
  * pstrcpy(d, s) - like strcpy, but for pascal strings
  *
 */
-pstrcpy(d, s)
-byte *d, *s;
+pstrcpy(byte *d, byte *s)
 {
   int len = (int)*s;
 
@@ -72,10 +70,7 @@ byte *d, *s;
 }
 
 /* like strncpy, but for pascal strings */
-pstrncpy(d, s, n)
-byte *s;
-byte *d;
-int n;
+void pstrncpy(byte *d, byte *s, int n)
 {
   int len = (int)*s;
 
@@ -88,8 +83,7 @@ int n;
  * pstrlen(s) - like strlen, but for pascal strings
  *
 */
-pstrlen(s)
-byte *s;
+int pstrlen(byte *s)
 {
   return((int)*s);
 }
@@ -98,9 +92,7 @@ byte *s;
  * pstrcmp(s1, s2) - like strcmp, but for pascal strings
  *
 */
-pstrcmp(s1, s2)
-byte *s1;
-byte *s2;
+int pstrcmp(byte *s1, byte *s2)
 {
   int len1 = ((int)*s1)+1;	/* account for length */
 
@@ -126,8 +118,7 @@ byte *s2;
  *
 */
 
-dbugarg(s)
-char *s;
+int dbugarg(char *s)
 {
   int err = 0;
   struct cap_version *v, *what_cap_version();
@@ -170,13 +161,7 @@ char *s;
  *
 */
 int
-setup_bds(bds, numbds, segsize, buf, bufsiz, userdata)
-BDS bds[];
-int numbds;
-int segsize;
-char *buf;
-int bufsiz;
-atpUserDataType userdata;
+setup_bds(BDS bds[], int numbds, int segsize, char *buf, int bufsiz, atpUserDataType userdata)
 {
   int cnt, i, cursize;
 
@@ -193,9 +178,7 @@ atpUserDataType userdata;
 }
 
 int
-sizeof_bds(bds, numbds)
-BDS bds[];
-int numbds;
+sizeof_bds(BDS bds[], int numbds)
 {
   int i, cnt;
 
@@ -215,8 +198,7 @@ int numbds;
  */
 
 void
-IniIndStr(istr)
-byte *istr;
+IniIndStr(byte *istr)
 {
   *istr = 0;			/* index count is zero */
 }
@@ -231,9 +213,7 @@ byte *istr;
  */
 
 void
-AddIndStr(src,istr)
-char *src;
-byte *istr;
+AddIndStr(char *src,byte *istr)
 {
   byte *idx = istr;
   int i;
@@ -253,10 +233,7 @@ byte *istr;
  */ 
 
 void
-GetIndStr(dest,istr,idx)
-char *dest;
-byte *istr;
-int idx;
+GetIndStr(char *dest,byte *istr,int idx)
 {
   if (idx > 255 || idx >= (int)*istr || idx < 0) {
     fprintf(stderr,"GetIndString: idx out of range\n");
@@ -278,8 +255,7 @@ int idx;
  */
 
 int
-IndStrCnt(istr)
-byte *istr;
+IndStrCnt(byte *istr)
 {
   return(*istr);		/* this is easy... */
 }
@@ -336,8 +312,7 @@ byte *istr;
  *
 */
 
-strcmpci(s,t)
-u_char *s,*t;
+int strcmpci(const u_char *s, const u_char *t)
 {
   register char c,d;
 
@@ -362,9 +337,7 @@ u_char *s,*t;
  *
 */
 
-strncmpci(s,t,n)
-char *s,*t;
-int n;
+int strncmpci(const char *s,const char *t, size_t n)
 {
   register char c,d;
 

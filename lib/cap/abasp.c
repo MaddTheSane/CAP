@@ -22,10 +22,12 @@
 #include <sys/types.h>
 #include <netinet/in.h>
 #include <netat/appletalk.h>
+#include <stdlib.h>
+#include <unistd.h>
 #include "abasp.h"
 
 int aspInit();
-int SPGetParms();
+void SPGetParms(int *MaxCmdSize, int *QuantumSize);
 int SPInit();
 int SPGetNetworkInfo();
 private void handle_aspserver();
@@ -96,6 +98,7 @@ private boolean aspsskt_isactive();
 private void sizeof_abr_bds_and_req();
 private void sizeof_bds_and_req();
 private OSErr asp_cksndrq_err();
+void asp_dosendstatus(int SLSRefNum, ABusRecord *abr);
 
 private int sessid_not_inited = TRUE;
 private word next_sessid = 0;	/* use word to prevent overflows */
@@ -158,9 +161,7 @@ int n;
  * Get server operating parameters
  *
 */
-SPGetParms(MaxCmdSize, QuantumSize)
-int *MaxCmdSize;
-int *QuantumSize;
+void SPGetParms(int *MaxCmdSize, int *QuantumSize)
 {
   if (isdcalls)
     fprintf(stderr,"asp: SPGetParms\n");
@@ -414,9 +415,7 @@ byte sessid;
  * Send a status report back
  *
 */
-asp_dosendstatus(SLSRefNum, abr)
-int SLSRefNum;
-ABusRecord *abr;
+void asp_dosendstatus(int SLSRefNum, ABusRecord *abr)
 {
   ASPSSkt *sas = aspsskt_find_slsrefnum(SLSRefNum);
   ASPQE *aspqe;
@@ -647,7 +646,7 @@ ASPQE *aspqe;
   ASPSkt *as;
 
   if (isdhand) 
-    fprintf(stderr, "asp: handle_sndreq with aspqe %x\n",aspqe);
+    fprintf(stderr, "asp: handle_sndreq with aspqe %p\n",aspqe);
   if (aspqe == NULL)
     return;			/* drop */
   if (abr == NULL || aspqe == NULL) {
@@ -658,7 +657,7 @@ ASPQE *aspqe;
 
   if (aspqe->type != tSPGetRequest) {
     if (isdhand)
-      fprintf(stderr,"asp: GetReq handler with bad aspqe %x - type %s\n",
+      fprintf(stderr,"asp: GetReq handler with bad aspqe %p - type %s\n",
 	      aspqe, aspevents[aspqe->type]);
     delete_aspaqe(aspqe);
   }
@@ -689,7 +688,7 @@ ASPQE *aspqe;
     }
     *aspqe->comp = abr->abResult;
     if (isdhand)
-      fprintf(stderr, "asp: hgetreq: Sessid %d, reqrefnum %x, type %s\n",
+      fprintf(stderr, "asp: hgetreq: Sessid %d, reqrefnum %p, type %s\n",
 	      as->SessID, aspqe, asptypes[aub->std.b1]);
     *aspqe->ReqRefNum = aspqe; /* cheap, but very bad */
     *aspqe->ActRcvdReqLen = abr->proto.atp.atpActCount;
@@ -744,7 +743,7 @@ int CmdReplyDataSize;
 int *comp;
 {
   if (isdcalls)
-    fprintf(stderr,"asp: SPCmdReply - srn %d, rrn %x, reply size %d\n",
+    fprintf(stderr,"asp: SPCmdReply - srn %d, rrn %p, reply size %d\n",
 	    SessRefNum, ReqRefNum, CmdReplyDataSize);
   return(spreply(tSPCmdReply, SessRefNum, ReqRefNum, CmdResult, CmdReplyData,
 	  CmdReplyDataSize, comp));
@@ -764,7 +763,7 @@ int CmdReplyDataSize;
 int *comp;
 {
   if (isdcalls)
-    fprintf(stderr,"asp: SPWrtReply - srn %d, rrn %x, reply size %d\n",
+    fprintf(stderr,"asp: SPWrtReply - srn %d, rrn %p, reply size %d\n",
 	    SessRefNum, ReqRefNum, CmdReplyDataSize);
   return(spreply(tSPWrtReply, SessRefNum, ReqRefNum, CmdResult, CmdReplyData,
 	  CmdReplyDataSize, comp));
@@ -871,7 +870,7 @@ int *comp;
   int cnt, err;
 
   if (isdcalls)
-    fprintf(stderr,"asp: SPWrtContinue: srn %d, rrn %x, bufsize %d\n",
+    fprintf(stderr,"asp: SPWrtContinue: srn %d, rrn %p, bufsize %d\n",
 	    SessRefNum, ReqRefNum, BufferSize);
   if (BufferSize < 0) {
     *comp = ParamErr;
@@ -1390,14 +1389,14 @@ ASPSkt *as;
 
 
   if (isdhand)
-    fprintf(stderr,"asp: Respond to wrtcontinue: with seqno %d on as %x\n",
+    fprintf(stderr,"asp: Respond to wrtcontinue: with seqno %d on as %p\n",
 	    seqno, as);
   aspwe = find_aspawe(as, seqno);
   if (aspwe == NULL)		/* drop then */
     return;
 
   if (isdhand)
-    fprintf(stderr,"asp: Response is with aspawe %x\n",aspwe);
+    fprintf(stderr,"asp: Response is with aspawe %p\n",aspwe);
 
   if (abr->proto.atp.atpActCount < sizeof(as->reqdata)) {
     /* This means we got a bad request here */
@@ -1414,7 +1413,7 @@ ASPSkt *as;
 
   towrite = min(ntohs(as->reqdata), aspwe->WriteDataSize);
   if (isdhand)
-    fprintf(stderr,"asp: Writting %d on aspawe %x\n",towrite,aspwe);
+    fprintf(stderr,"asp: Writting %d on aspawe %p\n",towrite,aspwe);
   *aspwe->ActLenWritten = towrite;
   cnt = setup_bds(aspwe->bds, atpMaxNum, atpMaxData, aspwe->WriteData,
 		  towrite, (dword)0);
@@ -1445,7 +1444,7 @@ ASPQE *aspqe;
   int rds, rrs;
 
   if (isdhand)
-    fprintf(stderr, "asp: handle_asp_sndreq with aspqe %x\n",aspqe);
+    fprintf(stderr, "asp: handle_asp_sndreq with aspqe %p\n",aspqe);
   if (aspqe == NULL)
     return;			/* drop */
   if (abr == NULL || aspqe == NULL) {
@@ -1485,7 +1484,7 @@ ASPQE *aspqe;
       break;
     case reqFailed:
       if (isdhand)
-	fprintf(stderr, "asp: hsndreq: reqFailed %x\n",aspqe);
+	fprintf(stderr, "asp: hsndreq: reqFailed %p\n",aspqe);
       *aspqe->comp = NoAck;
       break;
 #ifdef notdef
@@ -1589,7 +1588,7 @@ ASPQE *aspqe;
     case reqFailed:
     case noErr:
       if (isdhand)
-	fprintf(stderr, "asp: hsndreq: remote close %x\n",aspqe);
+	fprintf(stderr, "asp: hsndreq: remote close %p\n",aspqe);
       /* ignore error, etc */
       if (!as) {
 	*aspqe->comp = SessClosed;
@@ -1626,7 +1625,7 @@ ASPQE *aspqe;
   ASPSkt *as;
 
   if (isdhand) 
-    fprintf(stderr, "asp: handle_rspdone with aspqe %x\n",aspqe);
+    fprintf(stderr, "asp: handle_rspdone with aspqe %p\n",aspqe);
 
   if (aspqe == NULL)
     return;			/* drop */
@@ -1663,7 +1662,7 @@ ASPQE *aspqe;
   case noRelErr:
     /* is this the right thing to do????  */
     if (isdhand)
-      fprintf(stderr, "asp: hrspdone: no rel received %x\n",aspqe);
+      fprintf(stderr, "asp: hrspdone: no rel received %p\n",aspqe);
     *aspqe->comp = NoAck;	/* overload */
 #ifdef notdef
     /* This is a viable option, but will not do it.... */
@@ -1694,7 +1693,7 @@ ASPQE *aspqe;
   ASPSkt *as;
 
   if (isdhand)
-    fprintf(stderr, "asp:  hspecial: aspqe %x event code %s\n",
+    fprintf(stderr, "asp:  hspecial: aspqe %p event code %s\n",
 	    aspqe, aspevents[aspqe->type]);
 
   if (aspqe->type == tSPWrite2) {
@@ -2319,7 +2318,7 @@ ASPSkt *as;
 	exit(8);
       }
   if (isdskt)
-    fprintf(stderr,"asp: create_aq: create %x on %s\n",
+    fprintf(stderr,"asp: create_aq: create %p on %s\n",
 	    aspqe,which == ASPAQE ? "main queue" : "local writeq");
   q_tail(head, &aspqe->link);
   return(aspqe);
@@ -2342,7 +2341,7 @@ ASPSkt *as;
     break;
   }
   if (isdskt)
-    fprintf(stderr,"asp: delete_aq: delete %x on %s\n",
+    fprintf(stderr,"asp: delete_aq: delete %p on %s\n",
 	    aspqe,which == ASPAQE ? "main queue" : "local writeq");
   dq_elem(head, &aspqe->link);
   q_tail(&aspqe_free, &aspqe->link);
@@ -2466,8 +2465,7 @@ int *comp;
 }
 
 /* set asp debug flags */
-aspdebug(s)
-char *s;
+void aspdebug(const char *s)
 {
   asp_dbug = 0;			/* default to zero */
   while (*s) {

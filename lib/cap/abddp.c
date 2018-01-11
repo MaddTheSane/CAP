@@ -188,9 +188,7 @@ int flags;
 
 
 OSErr
-DDPOpenSocket(skt,sktlis)
-int *skt;
-ProcPtr sktlis;
+DDPOpenSocket(int *skt,ProcPtr sktlis)
 {
   OSErr err;
 
@@ -262,7 +260,7 @@ abRecPtr abr;
 */
 /*ARGSUSED*/
 OSErr
-DDPWriteIOV(abRecPtr abr,struct iovec iov[],int iovl)
+DDPWriteIOV(abRecPtr abr,struct iovec *iov,int iovl)
 {
   DDP ddp;
   ddpProto *dpr;
@@ -331,7 +329,7 @@ AddrBlock *addr;
  * Can in with iov pointing to DDP header
 */
 
-ddp_protocol(iov, iovlen, plen)
+void ddp_protocol(iov, iovlen, plen)
 struct iovec *iov;
 int iovlen;
 int plen;

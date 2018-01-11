@@ -28,13 +28,15 @@ static char revision[] = "$Revision: 2.5 $";
 #include <sys/types.h>
 #include <sys/time.h>
 #include <netat/appletalk.h>
+#include <errno.h>
+#include <stdlib.h>
+#include <stdbool.h>
+#include <dispatch/dispatch.h>
 
-#ifdef USEVPRINTF
-# include <varargs.h>
-#endif USEVPRINTF
+# include <stdarg.h>
 #ifdef USETIMES
 # include <time.h>
-#endif USETIMES
+#endif //USETIMES
 
 /* current debug level */
 static int dlevel;
@@ -50,11 +52,11 @@ static int dlevel;
  * set debug level
  *
 */
-get_debug_level()
+int get_debug_level()
 {
   return(dlevel);
 }
-set_debug_level(n)
+void set_debug_level(n)
 int n;
 {
   dlevel = n;
@@ -66,57 +68,33 @@ int n;
  * This is something all machine should, but don't have :-)
  */
 
-static FILE *lfp = stderr;
+static FILE *lfp;
+static char *mytod(void);
 
+static dispatch_once_t lfpInit_once;
+static dispatch_block_t lfpInit_block = ^void(void) {
+  lfp = stderr;
+};
 
-#ifndef USEVPRINTF
-/* Bletch - gotta do it because pyramids don't work the other way */
-/* (using _doprnt and &args) and don't have vprintf */
-/* of course, there will be something that is just one arg larger :-) */
-/*VARARGS1*/
-logit(level, fmt, a1,a2,a3,a4,a5,a6,a7,a8,a9,aa,ab,ac,ad,ae,af)
-int level;
-char *fmt;
-#else USEVPRINTF
-/*VARARGS*/
-logit(va_alist)
-va_dcl
-#endif USEVPRINTF
+void logit(int level, const char *fmt, ...)
 {
-  static char *mytod();
-#ifdef USEVPRINTF
-  register char *fmt;
+  dispatch_once(&lfpInit_once, lfpInit_block);
   va_list args;
-  int level;
-#endif USEVPRINTF
   int saveerr;
-  extern int errno;
-  extern int sys_nerr;
-#ifndef __FreeBSD__
-  extern char *sys_errlist[];
-#endif
 
   if (lfp == NULL)		/* no logging? */
     return;
 
   saveerr = errno;
-#ifdef USEVPRINTF
-  va_start(args);
-  level = va_arg(args, int);
-  fmt = va_arg(args, char *);
-#endif USEVPRINTF
+  va_start(args, fmt);
 
   if (dlevel < (level & L_LVL))
     return;
 
   fprintf(lfp,"%s ",mytod());
 
-#ifdef USEVPRINTF
   vfprintf(lfp, fmt, args);
   va_end(args);
-#else USEVPRINTF
-  fprintf(lfp, fmt, a1,a2,a3,a4,a5,a6,a7,a8,a9,aa,ab,ac,ad,ae,af);
-#endif USEVPRINTF
   if (level & L_UERR) {
     if (saveerr < sys_nerr)
       fprintf(lfp, ": %s", sys_errlist[saveerr]);
@@ -129,17 +107,17 @@ va_dcl
     exit(1);
 }
 
-islogitfile()
+bool islogitfile()
 {
+  dispatch_once(&lfpInit_once, lfpInit_block);
   if (lfp == stderr)
     return(FALSE);
   return(lfp != NULL);
 }
 
-logitfileis(filename, mode)
-char *filename;
-char *mode;
+void logitfileis(const char *filename, const char *mode)
 {
+  dispatch_once(&lfpInit_once, lfpInit_block);
   FILE *fp;
 
   if ((fp = fopen(filename, mode)) != NULL) {
@@ -150,8 +128,9 @@ char *mode;
   lfp = fp;			/* reset */
 }
 
-nologitfile()
+void nologitfile()
 {
+  dispatch_once(&lfpInit_once, lfpInit_block);
   if (lfp && lfp != stderr)
     fclose(lfp);
   lfp = NULL;

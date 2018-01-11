@@ -154,6 +154,7 @@ int read_buf_len;		/* dummy for absched.c		*/
 import int ddp_protocol();	/* DDP protocol handler		*/
 private int kip_get();		/* our KIP listener		*/
 export DBUG dbug;		/* debug flags			*/
+private word getPRange();
 
 /* BUG: bind doesn't work when lsin is on the stack! */
 private struct sockaddr_in lsin; /* local socketaddr/internet */
@@ -268,7 +269,6 @@ export
 abInit(disp)
 {
   int i;
-  private word getPRange();
 
   for (i=0; i < ddpMaxSkt+1; i++) {
     skt2fd[i] = -1;		/* mark all these as unused */
