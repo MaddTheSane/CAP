@@ -1,5 +1,5 @@
 # Makefile autoconfigured for ...
-# SunOS system on Fri Feb 15 13:59:43 EST 1991
+# Mac OS X system on Wed Jan 10 17:17:55 MST 2018
 
 
 
@@ -9,21 +9,27 @@ CC=cc
 LD=ld
 SHELL=/bin/sh
 INSTALLER=cp
-CFLAGS= -O  -DSHORT_NAMES -DMELBOURNE
-I=/usr/include
+CFLAGS= -DBYTESWAPPED -O -DNeXT -DADDRINPACK -DUSEDIRENT -I/Users/cwbetts/makestuff/CAP/tmpBuild 
+I=/Users/cwbetts/makestuff/CAP/tmpBuild
 O=
 
 # Make sure to define needgetopt if your system doesnt have it
-GETOPT=
+GETOPT=att_getopt.o
 
 # for other libraries (like BSD on hpux)
 SLIB=
 
-CAPLIB=-lcap
-DESTDIR=/usr/local/cap
+CAPLIB=/Users/cwbetts/makestuff/CAP/tmpBuild/lib/libcap.a
+AFPLIB=/Users/cwbetts/makestuff/CAP/tmpBuild/lib/libafp.a
+UDESTDIR=/Users/cwbetts/makestuff/CAP/tmpBuild/bin
+SDESTDIR=/Users/cwbetts/makestuff/CAP/tmpBuild/bin
 RENAMEFLAG=-DLWRENAMEFILE=\"/usr/local/lib/cap/lwrename.list\"
 
-PROGS=snitch cvt2apple cvt2cap lwrename printqueue
+ATISPROGS=snitch
+
+SRVR=lwrename printqueue ${ATISPROGS} aufsmkusr aufsmkkey
+USER=cvt2apple cvt2cap
+PROGS= ${USER} ${SRVR} 
 
 all:	${PROGS}
 
@@ -43,22 +49,40 @@ lwrename.o:	lwrename.c
 	${CC} ${CFLAGS} ${RENAMEFLAG} -c lwrename.c
 
 printqueue:	printqueue.o
-	${CC} ${LFLAGS} -o printqueue printqueue.o ${O} ${CAPLIB} ${SLIB}
+	${CC} ${LFLAGS} -o printqueue printqueue.o ${O} ${CAPLIB} ${AFPLIB} ${SLIB}
+
+aufsmkusr:	aufsmkusr.o
+	${CC} ${LFLAGS} -o aufsmkusr aufsmkusr.o ${O} ${AFPLIB} ${SLIB}
+
+aufsmkkey:	aufsmkkey.o
+	${CC} ${LFLAGS} -o aufsmkkey aufsmkkey.o ${O} ${AFPLIB} ${SLIB}
 
 att_getopt.c:
 	ln -s ../extras/att_getopt.c
 
 install: ${PROGS}
 	-strip ${PROGS}
-	${INSTALLER} ${PROGS} ${DESTDIR}
+	${INSTALLER} ${USER} ${UDESTDIR}
+	${INSTALLER} ${SRVR} ${SDESTDIR}
 
 clean:
 	-rm -f ${PROGS} *.o core make.log err att_getopt.c *~
+	-(cd AppManager; make clean)
 	-(cd AsyncATalk; make clean)
 	-(cd AufsTools; make clean)
 	-(cd MacPS; make clean)
 	-(cd Messages; make clean)
 	-(cd Timelord; make clean)
+
+spotless:
+	-rm -f ${PROGS} *.o *.orig core make.log err att_getopt.c *~
+	-rm -f Makefile makefile
+	-(cd AppManager; make spotless)
+	-(cd AsyncATalk; make spotless)
+	-(cd AufsTools; make spotless)
+	-(cd MacPS; make spotless)
+	-(cd Messages; make spotless)
+	-(cd Timelord; make spotless)
 
 cleanexe:
 	-rm -f ${PROGS}

@@ -1,5 +1,5 @@
 # Makefile autoconfigured for ...
-# SunOS system on Fri Feb 15 14:00:20 EST 1991
+# Mac OS X system on Wed Jan 10 17:17:55 MST 2018
 
 
 
@@ -9,11 +9,11 @@ CC=cc
 LD=ld
 SHELL=/bin/sh
 INSTALLER=cp
-CFLAGS= -O  -DSHORT_NAMES -DMELBOURNE
-LWFLAGS=-DDOCNAME -DPAGECOUNT=512
-I=/usr/include
-CAPLIB=-lcap
-DESTDIR=/usr/local/cap
+CFLAGS= -DBYTESWAPPED -O -DNeXT -DADDRINPACK -DUSEDIRENT -I/Users/cwbetts/makestuff/CAP/tmpBuild 
+LWFLAGS=
+I=/Users/cwbetts/makestuff/CAP/tmpBuild
+CAPLIB=/Users/cwbetts/makestuff/CAP/tmpBuild/lib/libcap.a
+DESTDIR=/Users/cwbetts/makestuff/CAP/tmpBuild/bin
 
 # for other libraries (like BSD on hpux)
 SLIB=
@@ -21,17 +21,17 @@ SLIB=
 # See README file for notes about defines
 # Valid: SFLOWQ=[1,2,3,4,5,6,7,8]
 # Valid: IDLESTUFF, NO_STRUCT, NOACCT, CAPPRINTERS=location
-PAPFLAGS=-DMACUSER -DIDLESTUFF 
+PAPFLAGS=-DMACUSER -DIDLESTUFF -DCAPPRINTERS=\"/Users/cwbetts/makestuff/CAP/tmpBuild/etc/cap.printers\"
 PAPBANNER=-DCHARGEBANNER
 
 # USEVPRINTF - use vprintf in logging
-VPRINTF=-DUSEVPRINTF
+#VPRINTF=-DUSEVPRINTF
 # If you have Transcript from Adobe for your laserWriter and want to
 #  print text files, uncomment the next line and set the location properly
-# WPSTEXT="-DPSTEXT=\"/usr/local/lib/ps/pstext\"
+# WPSTEXT=-DPSTEXT=\"/usr/local/lib/ps/pstext\"
 
 # This is if you have transcript and and want page reversal if possible
-# WPSREVERSE=-DPSREVERSE=\"/usr/local/lib/ps/psrev\"
+# WPSREVERSE=-DPSREVERSE=\"/usr/local/lib/ps/psrv\"
 
 all:	papif papof
 
@@ -54,6 +54,9 @@ papof:	papof.o
 
 clean:
 	-rm -f papif papof *.o
+
+spotless:
+	-rm -f papif papof *.o *.orig Makefile makefile
 
 
 install: papif papof

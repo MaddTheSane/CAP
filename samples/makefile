@@ -1,5 +1,5 @@
 # Makefile autoconfigured for ...
-# SunOS system on Fri Feb 15 13:59:51 EST 1991
+# Mac OS X system on Wed Jan 10 17:17:55 MST 2018
 
 
 
@@ -9,25 +9,26 @@ CC=cc
 LD=ld
 SHELL=/bin/sh
 INSTALLER=cp
-CFLAGS= -O  -DSHORT_NAMES -DMELBOURNE
-I=/usr/include
+CFLAGS= -DBYTESWAPPED -O -DNeXT -DADDRINPACK -DUSEDIRENT -I/Users/cwbetts/makestuff/CAP/tmpBuild 
+I=/Users/cwbetts/makestuff/CAP/tmpBuild
 O=
 
 # Valid: SFLOWQ=[1,2,3,4,5,6,7,8]
-LWFLAGS=-DDOCNAME -DPAGECOUNT=512
+LWFLAGS=
 
 # location of cap.printers file
-
+CAPPRINTERS=-DCAPPRINTERS=\"/Users/cwbetts/makestuff/CAP/tmpBuild/etc/cap.printers\"
 
 # Make sure to define needgetopt if your system doesnt have it
-GETOPT=
+GETOPT=att_getopt.o
 
-PROGS=lwpr tlw atlook atlooklws atpinger iwpr isrv atistest ash \
-	instappl getzones
+ATISPROGS=atistest
+PROGS=lwpr tlw atlook atlooklws atpinger iwpr isrv ash \
+	instappl getzones papstatus ${ATISPROGS}
 
-DESTDIR=/usr/local/cap
-CAPLIB=-lcap
-AFPLIB=-lafpc -lafp
+DESTDIR=/Users/cwbetts/makestuff/CAP/tmpBuild/bin
+CAPLIB=/Users/cwbetts/makestuff/CAP/tmpBuild/lib/libcap.a
+AFPLIB=/Users/cwbetts/makestuff/CAP/tmpBuild/lib/libafpc.a /Users/cwbetts/makestuff/CAP/tmpBuild/lib/libafp.a
 
 # for other libraries (like BSD on hpux)
 SLIB=
@@ -39,6 +40,12 @@ atistest:	atistest.o ${O}
 
 getzones:	getzones.o ${O}
 	${CC} ${LFLAGS} -o getzones getzones.o ${O} ${CAPLIB} ${SLIB}
+
+papstatus:	papstatus.o ${O}
+	${CC} ${LFLAGS} -o papstatus papstatus.o ${O} ${CAPLIB} ${SLIB}
+
+papstatus.o:	papstatus.c
+	${CC} ${CFLAGS} ${LWFLAGS} ${CAPPRINTERS} -c papstatus.c
 
 ash.o:	ash.c
 	${CC} ${CFLAGS}  -c ash.c
@@ -70,11 +77,11 @@ isrv:	isrv.o $(O)
 isrv.o:	isrv.c
 	${CC} ${CFLAGS} -c isrv.c
 
-tlw:	tlw.o $(O)
-	${CC} ${LFLAGS} -o tlw tlw.o $(O) $(CAPLIB) ${SLIB}
+tlw:	tlw.o $(O) ${GETOPT}
+	${CC} ${LFLAGS} -o tlw tlw.o $(O) ${GETOPT} $(CAPLIB) ${SLIB}
 
 tlw.o:	tlw.c
-	${CC} ${CFLAGS} ${LWFLAGS} -c tlw.c
+	${CC} ${CFLAGS} ${LWFLAGS} ${CAPPRINTERS} -c tlw.c
 
 #
 # atlook, atlooklw, and atpinger all have a common source
@@ -108,6 +115,10 @@ install: ${PROGS}
 
 clean:
 	-rm -f ${PROGS} *.o core make.log err *~ att_getopt.c
+
+spotless:
+	-rm -f ${PROGS} *.o *.orig core make.log err *~ att_getopt.c
+	-rm -f Makefile makefile
 
 cleanexe:
 	-rm -f ${PROGS}

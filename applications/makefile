@@ -1,5 +1,5 @@
 # Makefile autoconfigured for ...
-# SunOS system on Fri Feb 15 14:00:15 EST 1991
+# Mac OS X system on Wed Jan 10 17:17:55 MST 2018
 
 
 
@@ -25,6 +25,12 @@ clean:
 	-(cd lwsrv; make clean)
 	-(cd papif; make clean)
 	-(cd aufs; make clean)
+
+spotless:
+	-rm -f *.orig Makefile makefile
+	-(cd lwsrv; make spotless)
+	-(cd papif; make spotless)
+	-(cd aufs; make spotless)
 
 dist:
 	@cat todist

@@ -1,5 +1,5 @@
 # Makefile autoconfigured for ...
-# SunOS system on Fri Feb 15 14:00:01 EST 1991
+# Mac OS X system on Wed Jan 10 17:17:55 MST 2018
 
 
 
@@ -31,6 +31,13 @@ clean:
 	-(cd cap; make clean)
 	-(cd afp; make clean)
 	-(cd afpc; make clean)
+	
+
+spotless:
+	-rm -f *.orig Makefile makefile
+	-(cd cap; make spotless)
+	-(cd afp; make spotless)
+	-(cd afpc; make spotless)
 	
 
 dist:

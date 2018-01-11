@@ -1,5 +1,5 @@
 # Makefile autoconfigured for ...
-# SunOS system on Fri Feb 15 14:00:26 EST 1991
+# Mac OS X system on Wed Jan 10 17:17:55 MST 2018
 
 
 
@@ -9,12 +9,13 @@ CC=cc
 LD=ld
 SHELL=/bin/sh
 INSTALLER=cp
-CFLAGS= -O   -DSHORT_NAMES -DMELBOURNE
-DESTDIR=/usr/local/cap
+CFLAGS= -DBYTESWAPPED -O -DNeXT -DADDRINPACK -DUSEDIRENT -I/Users/cwbetts/makestuff/CAP/tmpBuild  
+DESTDIR=/Users/cwbetts/makestuff/CAP/tmpBuild/bin
 PROGS=
 POBJS=
-ETCDIR=/etc
-CAPLIB=-lcap
+ETCDIR=/Users/cwbetts/makestuff/CAP/tmpBuild/etc
+CAPLIB=/Users/cwbetts/makestuff/CAP/tmpBuild/lib/libcap.a
+SLIB=
 
 LIBABSRCS=abelap.c ethertalk.c ../uab/aarp.c ../uab/hash.c
 LIBABOBJS=abelap.o ethertalk.o aarp.o hash.o
@@ -28,13 +29,16 @@ abetalk.o: ${LIBABOBJS} ${POBJS} aarpd_clnt.o aarpd_xdr.o aarpd.h
 	ld -r -o abetalk.o ${LIBABOBJS} ${POBJS} aarpd_clnt.o aarpd_xdr.o
 
 aarpd:	aarpd.o aarpd_svc.o aarpd.h
-	cc -o aarpd aarpd.o aarpd_svc.o ${CAPLIB}
+	${CC} ${LFLAGS} -o aarpd aarpd.o aarpd_svc.o ${CAPLIB} ${SLIB}
 
 aarptest: aarptest.o aarpd.h
-	cc -o aarptest aarptest.o ${CAPLIB}
+	${CC} ${LFLAGS} -o aarptest aarptest.o ${CAPLIB} ${SLIB}
 
 rtmptest: rtmptest.o aarpd.h
-	cc -o rtmptest rtmptest.o ${CAPLIB}
+	${CC} ${LFLAGS} -o rtmptest rtmptest.o ${CAPLIB} ${SLIB}
+
+rangetest: rangetest.o aarpd.h
+	${CC} ${LFLAGS} -o rangetest rangetest.o ${CAPLIB} ${SLIB}
 
 aarpd.o: aarpd.c aarpd.h
 
@@ -44,7 +48,11 @@ ethertalk.o: ethertalk.c ../uab/ethertalk.h
 
 snitp.o: snitp.c ../uab/proto_intf.h
 
+sdlpi.o.o: sdlpi.o.c ../uab/proto_intf.h
+
+# explict command because on pyramid we don't want -q for this
 senetp.o: senetp.c ../uab/proto_intf.h
+
 
 aarpd_clnt.o: aarpd_clnt.c aarpd.h
 
@@ -54,10 +62,10 @@ aarpd_xdr.o: aarpd_xdr.c aarpd.h
 
 aarp.o: ../uab/aarp.c ../uab/hash.h ../uab/proto_intf.h \
     ../uab/ethertalk.h ../uab/aarp_defs.h ../uab/aarp.h
-	cc $(CFLAGS) -DAARPD -c ../uab/aarp.c
+	${CC} $(CFLAGS) -DAARPD -c ../uab/aarp.c
 
 hash.o: ../uab/hash.c ../uab/hash.h
-	cc $(CFLAGS) -c ../uab/hash.c
+	${CC} $(CFLAGS) -c ../uab/hash.c
 
 aarptest.o: aarptest.c aarpd.h
 
@@ -73,3 +81,6 @@ aarpd.install: aarpd
 
 clean:
 	rm -f *.o core aarpd aarptest rtmptest
+
+spotless:
+	rm -f *.o *.orig core aarpd aarptest rtmptest Makefile makefile

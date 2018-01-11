@@ -1,5 +1,5 @@
 # Makefile autoconfigured for ...
-# SunOS system on Mon Mar  4 19:08:43 EST 1991
+# Mac OS X system on Wed Jan 10 17:17:55 MST 2018
 
 
 
@@ -9,20 +9,20 @@ CC=cc
 LD=ld
 SHELL=/bin/sh
 INSTALLER=cp
-CFLAGS= -O  
+CFLAGS= -DBYTESWAPPED -O -DNeXT -DADDRINPACK -DUSEDIRENT -I/Users/cwbetts/makestuff/CAP/tmpBuild  
 NBPFLAGS=
-I=/usr/include
+I=/Users/cwbetts/makestuff/CAP/tmpBuild
 LIBCAP=libcap.a
-DESTDIR=/usr/local/lib
+DESTDIR=/Users/cwbetts/makestuff/CAP/tmpBuild/lib
 AUTHCONFIG=\"/etc/cap.auth\"
 
 LIBABSRCS=abatp.c abddp.c abmisc.c abnbp.c abauxddp.c abauxnbp.c \
 	abpap.c abpapc.c abpaps.c abpp.c abqueue.c abasp.c \
 	abzip.c abversion.c atalkdbm.c absched.c abkip.c \
-	authenticate.c ablog.c
+	authenticate.c ablog.c scandir.c
 LIBABOBJS=abatp.o abmisc.o abzip.o abversion.o absched.o \
 	abpap.o abpapc.o abpaps.o abpp.o abqueue.o abasp.o \
-	authenticate.o ablog.o
+	authenticate.o ablog.o scandir.o
 
 # LABOBJ defines the various low level delivery mechanisms
 #   default: abkip.o abddp.o abnbp.o atalkdbm.o
@@ -32,7 +32,7 @@ LIBABOBJS=abatp.o abmisc.o abzip.o abversion.o absched.o \
 LAPOBJ=abkip.o abddp.o abnbp.o atalkdbm.o
 
 # USEVPRINTF - use vprintf in logging
-LOGDEFS=-DUSEVPRINTF
+LOGDEFS=
 
 DEPENDS=$I/netat/appletalk.h $I/netat/aberrors.h $I/netat/abqueue.h
 
@@ -43,6 +43,9 @@ $(LIBCAP):	$(LIBABOBJS) $(LAPOBJ)
 
 clean:
 	-rm -f *.o *.a core
+
+spotless:
+	-rm -f *.o *.a *.orig core Makefile makefile
 
 install:	$(LIBCAP)
 	${INSTALLER} $(LIBCAP) $(DESTDIR)
@@ -56,7 +59,7 @@ lint:	$(LIBABSRCS)
 
 abetalk.o:
 	(cd ../../support/ethertalk; make abetalk.o)
-	cp ../../support/ethertalk/abetalk.o abetalk.o
+	mv ../../support/ethertalk/abetalk.o abetalk.o
 
 abmkip.o:       abkip.c		${DEPENDS} $I/netat/abnbp.h $I/netat/compat.h
 	cp abkip.c abmkip.c
@@ -64,7 +67,8 @@ abmkip.o:       abkip.c		${DEPENDS} $I/netat/abnbp.h $I/netat/compat.h
 	/bin/rm abmkip.c
 
 atalkdbm.o:     atalkdbm.c	${DEPENDS}
-	${CC} ${CFLAGS} -DTAB=\"/etc/atalk.local\" -DCONFIGDIR=\"/etc\" -c atalkdbm.c
+	${CC} ${CFLAGS} -DTAB=\"/Users/cwbetts/makestuff/CAP/tmpBuild/etc/atalk.local\" -DETAB=\"/Users/cwbetts/makestuff/CAP/tmpBuild/etc/etalk.local\" \
+		-DCONFIGDIR=\"/Users/cwbetts/makestuff/CAP/tmpBuild/etc\" -c atalkdbm.c
 
 authenticate.o:	authenticate.c	${DEPENDS}
 	${CC} ${CFLAGS} -DAUTHCONFIG=${AUTHCONFIG} -c authenticate.c

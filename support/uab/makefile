@@ -1,5 +1,5 @@
 # Makefile autoconfigured for ...
-# SunOS system on Fri Feb 15 14:00:24 EST 1991
+# Mac OS X system on Wed Jan 10 17:17:55 MST 2018
 
 
 
@@ -9,11 +9,11 @@ CC=cc
 LD=ld
 SHELL=/bin/sh
 INSTALLER=cp
-CFLAGS=-DDEBUG  -O  -DSHORT_NAMES -DMELBOURNE
-DESTDIR=/usr/local/cap
+CFLAGS=-DDEBUG  -DBYTESWAPPED -O -DNeXT -DADDRINPACK -DUSEDIRENT -I/Users/cwbetts/makestuff/CAP/tmpBuild 
+DESTDIR=/Users/cwbetts/makestuff/CAP/tmpBuild/bin
 PROGS=
 POBJS=
-CAPLIB=-lcap
+CAPLIB=/Users/cwbetts/makestuff/CAP/tmpBuild/lib/libcap.a
 LFLAGS=
 
 SRCS=aarp.c kip_mpx.c rtmp.c ethertalk.c ddprouter.c ddpsvcs.c ddpport.c \
@@ -35,17 +35,20 @@ uab.install: uab
 	${INSTALLER} uab ${DESTDIR}
 
 kip_mpx.o: kip_mpx.c mpxddp.h gw.h node.h ddpport.h
-	cc -c ${CFLAGS} kip_mpx.c
+	${CC} -c ${CFLAGS} -DTAB=\"/Users/cwbetts/makestuff/CAP/tmpBuild/etc/etalk.local\" -DMTAB=\"/Users/cwbetts/makestuff/CAP/tmpBuild/etc/etalk.local\" kip_mpx.c
 
 uab.o: uab.c mpxddp.h gw.h node.h ddpport.h if_desc.h
-	cc -c ${CFLAGS} -DUAB_PIDFILE=\"/usr/local/lib/cap/uab.pid\" \
-		-DBRIDGE_DESC=\"/usr/local/lib/cap/bridge_desc\" uab.c
+	${CC} -c ${CFLAGS} -DUAB_PIDFILE=\"/usr/local/lib/cap/uab.pid\" \
+			-DBRIDGE_DESC=\"/usr/local/lib/cap/bridge_desc\" uab.c
 
 lint:
 	lint -h uab.c ${SRCS}
 
 clean:
 	rm -f *.o uab
+
+spotless:
+	rm -f *.o *.orig uab Makefile makefile
 
 # ddpport.h: mpxddp.h node.h
 # gw.h: node.h ddport.h (mpxddp.h)

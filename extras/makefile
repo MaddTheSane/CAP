@@ -1,5 +1,5 @@
 # Makefile autoconfigured for ...
-# SunOS system on Fri Feb 15 13:59:56 EST 1991
+# Mac OS X system on Wed Jan 10 17:17:55 MST 2018
 
 
 
@@ -9,10 +9,10 @@ CC=cc
 LD=ld
 SHELL=/bin/sh
 INSTALLER=cp
-CFLAGS= -O  -DSHORT_NAMES -DMELBOURNE
-DESTDIR=/usr/local/cap
-CAPLIB=-lcap
-I=/usr/include
+CFLAGS= -DBYTESWAPPED -O -DNeXT -DADDRINPACK -DUSEDIRENT -I/Users/cwbetts/makestuff/CAP/tmpBuild 
+DESTDIR=/Users/cwbetts/makestuff/CAP/tmpBuild/bin
+CAPLIB=/Users/cwbetts/makestuff/CAP/tmpBuild/lib/libcap.a
+I=/Users/cwbetts/makestuff/CAP/tmpBuild
 LFLAGS=
 O=
 
@@ -32,6 +32,9 @@ install: ${PROGS}
 
 clean:
 	-rm -f ${PROGS} *.o core make.log err *~
+
+spotless:
+	-rm -f ${PROGS} *.o *.orig core make.log err *~ Makefile makefile
 
 cleanexe:
 	-rm -f ${PROGS}

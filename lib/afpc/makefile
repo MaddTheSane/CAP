@@ -1,5 +1,5 @@
 # Makefile autoconfigured for ...
-# SunOS system on Fri Feb 15 14:00:08 EST 1991
+# Mac OS X system on Wed Jan 10 17:17:55 MST 2018
 
 
 
@@ -9,10 +9,10 @@ CC=cc
 LD=ld
 SHELL=/bin/sh
 INSTALLER=cp
-CFLAGS= -O   -DSHORT_NAMES -DMELBOURNE
-DESTDIR=/usr/local/lib
+CFLAGS= -DBYTESWAPPED -O -DNeXT -DADDRINPACK -DUSEDIRENT -I/Users/cwbetts/makestuff/CAP/tmpBuild  
+DESTDIR=/Users/cwbetts/makestuff/CAP/tmpBuild/lib
 LIBAFPC=libafpc.a
-I=/usr/include
+I=/Users/cwbetts/makestuff/CAP/tmpBuild
 
 LIBAFPCSRCS=afpc.c afpcc.c
 LIBAFPCOBJS=afpc.o afpcc.o
@@ -22,6 +22,9 @@ $(LIBAFPC):	$(LIBAFPCOBJS)
 
 clean:
 	-rm -f ${LIBAFPCOBJS} ${LIBAFPC} core *~
+
+spotless:
+	-rm -f ${LIBAFPCOBJS} ${LIBAFPC} core *~ *.orig Makefile makefile
 
 install:	$(LIBAFPC)
 	${INSTALLER} $(LIBAFPC) $(DESTDIR)
